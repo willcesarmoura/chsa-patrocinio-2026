@@ -514,6 +514,7 @@ mark{background:rgba(201,168,76,.25);color:var(--gold2);border-radius:2px;paddin
   <div class="tabs">
     <div class="tab on" id="tab-b" onclick="goTab('b')">🔍 Buscar</div>
     <div class="tab"    id="tab-i" onclick="goTab('i')">📥 Importar</div>
+    <div class="tab"    id="tab-ch" onclick="goTab('ch')">🏆 Campeonato</div>
     <div class="tab"    id="tab-c" onclick="goTab('c')">👥 Clientes</div>
     <div class="tab"    id="tab-e" onclick="goTab('e')">📋 Eventos</div>
     <div class="tab"    id="tab-d" onclick="goTab('d')">📤 Entregas</div>
@@ -582,6 +583,20 @@ https://chsa-inscricao.macronetwork.com.br/calendario/OrdemEntrada?ID=13420"></t
     </div>
   </div>
 
+  <!-- ═══ CAMPEONATO ═══ -->
+  <div class="scr" id="scr-ch">
+    <div class="add-form">
+      <div class="add-form-title">🏆 Novo Campeonato</div>
+      <div>
+        <label class="flbl">Nome do campeonato</label>
+        <input class="inp" id="camp-nome" placeholder="Ex: 7ª Etapa Copa Santo Amaro" autocomplete="off"
+          onkeydown="if(event.key==='Enter')adicionarCampeonato()">
+      </div>
+      <button class="btn btn-gold" onclick="adicionarCampeonato()">+ Salvar Campeonato</button>
+    </div>
+    <div id="camp-list"></div>
+  </div>
+
   <!-- ═══ CLIENTES ═══ -->
   <div class="scr" id="scr-c">
 
@@ -600,6 +615,13 @@ https://chsa-inscricao.macronetwork.com.br/calendario/OrdemEntrada?ID=13420"></t
       <div>
         <label class="flbl">WhatsApp <span style="color:var(--gray);font-size:10px">(opcional)</span></label>
         <input class="inp" id="cli-fone" type="tel" placeholder="(11) 99999-0000" autocomplete="off">
+      </div>
+
+      <div>
+        <label class="flbl">Campeonato <span style="color:var(--gray);font-size:10px">(opcional)</span></label>
+        <select class="inp" id="cli-camp">
+          <option value="">— selecionar campeonato —</option>
+        </select>
       </div>
 
       <!-- Busca direta na ordem de entrada -->
@@ -756,6 +778,67 @@ function saveClients(arr) {
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
+// ── CAMPEONATOS ───────────────────────────────────────────────────────
+const CAMP_KEY = 'on_ordens_camp_v1';
+function loadCampeonatos() {
+  try { return JSON.parse(localStorage.getItem(CAMP_KEY)) || []; }
+  catch { return []; }
+}
+function saveCampeonatos(arr) {
+  try { localStorage.setItem(CAMP_KEY, JSON.stringify(arr)); } catch {}
+  if (window.db) db.collection('ordens_config').doc('campeonatos')
+    .set({ items: arr }).catch(e => console.warn('Cloud save campeonatos:', e));
+}
+
+function adicionarCampeonato() {
+  const nome = (document.getElementById('camp-nome')?.value || '').trim();
+  if (!nome) { alert('Digite o nome do campeonato.'); return; }
+  const camps = loadCampeonatos();
+  camps.push({ id: uid(), nome });
+  saveCampeonatos(camps);
+  document.getElementById('camp-nome').value = '';
+  renderCampeonatos();
+  populateCampSelect();
+}
+
+function deletarCampeonato(id) {
+  if (!confirm('Remover este campeonato?')) return;
+  saveCampeonatos(loadCampeonatos().filter(c => c.id !== id));
+  renderCampeonatos();
+  populateCampSelect();
+}
+
+function renderCampeonatos() {
+  const el = document.getElementById('camp-list');
+  if (!el) return;
+  const camps = loadCampeonatos();
+  if (!camps.length) {
+    el.innerHTML = `<div class="empty" style="margin-top:24px">
+      <div class="eico">🏆</div>
+      <div class="etit">Nenhum campeonato cadastrado</div>
+      <div class="esub">Adicione acima o primeiro campeonato</div>
+    </div>`; return;
+  }
+  el.innerHTML = camps.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px;background:var(--card);border:1px solid var(--cb);
+      border-radius:var(--r);margin-bottom:10px">
+      <span style="font-weight:700;font-size:14px">🏆 ${esc(c.nome)}</span>
+      <button onclick="deletarCampeonato('${c.id}')"
+        style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;padding:2px 6px"
+        title="Remover">✕</button>
+    </div>`).join('');
+}
+
+function populateCampSelect() {
+  const sel = document.getElementById('cli-camp');
+  if (!sel) return;
+  const cur = sel.value;
+  const camps = loadCampeonatos();
+  sel.innerHTML = `<option value="">— selecionar campeonato —</option>` +
+    camps.map(c => `<option value="${c.id}" ${c.id===cur?'selected':''}>${esc(c.nome)}</option>`).join('');
+}
+
 function hashId(s) {
   let h = 0;
   for (const c of s) h = Math.imul(31, h) + c.charCodeAt(0) | 0;
@@ -765,11 +848,12 @@ function entryKey(provaId, ordem) { return hashId(provaId) + '_' + ordem; }
 
 // ── TABS ──────────────────────────────────────────────────────────────
 function goTab(t) {
-  ['b','i','c','e','d','f'].forEach(x => {
+  ['b','i','ch','c','e','d','f'].forEach(x => {
     document.getElementById('tab-' + x).classList.toggle('on', x === t);
     document.getElementById('scr-' + x).classList.toggle('on', x === t);
   });
-  if (t === 'c') renderClientes();
+  if (t === 'ch') renderCampeonatos();
+  if (t === 'c') { populateCampSelect(); renderClientes(); }
   if (t === 'e') renderEventos();
   if (t === 'd') renderEntregas();
   if (t === 'f') renderFinanceiroTab();
@@ -1344,8 +1428,9 @@ function adicionarCliente() {
   const pagamento   = document.getElementById('cli-pag').value || 'pendente';
   const val_cobrado = document.getElementById('cli-val-cobrado').value.trim();
   const val_pago    = document.getElementById('cli-val-pago').value.trim();
-  const qtd_pacote  = parseInt(document.getElementById('cli-qtd-pacote').value) || 0;
-  const preco_video = parseFloat(document.getElementById('cli-preco-video').value) || 0;
+  const qtd_pacote    = parseInt(document.getElementById('cli-qtd-pacote').value) || 0;
+  const preco_video   = parseFloat(document.getElementById('cli-preco-video').value) || 0;
+  const campeonato_id = document.getElementById('cli-camp')?.value || '';
 
   if (!nome) { alert('Digite o nome do cliente.'); return; }
 
@@ -1356,7 +1441,7 @@ function adicionarCliente() {
 
   const clients = loadClients();
   clients.push({ id: uid(), nome, cavalos, cavaleiros, fone, obs, pagamento,
-    val_cobrado, val_pago, qtd_pacote, preco_video, pedidos: pedidosIniciais });
+    val_cobrado, val_pago, qtd_pacote, preco_video, campeonato_id, pedidos: pedidosIniciais });
   saveClients(clients);
 
   // Adiciona pedidos via matching automático se configurado
@@ -1461,9 +1546,9 @@ function renderFinanceiroTab() {
     el.innerHTML = '<div class="fin-empty">Nenhum cliente cadastrado ainda.</div>'; return;
   }
 
-  // ── mapa provaId → evento ──
-  const provaEvt = {};
-  for (const d of dados) provaEvt[d.id] = d.evento || 'Sem evento';
+  // ── mapa campeonato id → nome ──
+  const campMap = {};
+  for (const c of loadCampeonatos()) campMap[c.id] = c.nome;
 
   // ── métricas de um cliente ──
   function stats(c) {
@@ -1487,25 +1572,16 @@ function renderFinanceiroTab() {
     return { cobrado, pago, deve, nEnv, nPend, qtdPac, waUrl, risco };
   }
 
-  // ── agrupar clientes por evento ──
-  const byEvento = {};   // { eventoNome: Set<clienteId> }
+  // ── agrupar clientes por campeonato ──
+  const byEvento = {};   // { campNome: Set<clienteId> }
   const idxClient = {};  // { clienteId: objeto cliente }
   for (const c of clients) {
     idxClient[c.id] = c;
-    const evts = new Set();
-    for (const p of (c.pedidos || [])) {
-      const ev = provaEvt[p.prova_id];
-      if (ev) evts.add(ev);
-    }
-    if (evts.size === 0) {
-      if (!byEvento['__sem__']) byEvento['__sem__'] = new Set();
-      byEvento['__sem__'].add(c.id);
-    } else {
-      for (const ev of evts) {
-        if (!byEvento[ev]) byEvento[ev] = new Set();
-        byEvento[ev].add(c.id);
-      }
-    }
+    const campNome = c.campeonato_id && campMap[c.campeonato_id]
+      ? campMap[c.campeonato_id]
+      : '__sem__';
+    if (!byEvento[campNome]) byEvento[campNome] = new Set();
+    byEvento[campNome].add(c.id);
   }
 
   // ── totais globais ──
@@ -1628,7 +1704,7 @@ function renderFinanceiroTab() {
     }
     const evDeve    = Math.max(0, evFat - evRec);
     const evColPct  = evFat > 0 ? Math.round(evRec / evFat * 100) : 0;
-    const label     = evNm === '__sem__' ? '📋 Sem evento vinculado' : `🏆 ${esc(evNm)}`;
+    const label     = evNm === '__sem__' ? '📋 Sem campeonato vinculado' : `🏆 ${esc(evNm)}`;
 
     return `<div class="fin-evt-grp">
       <div class="fin-evt-hdr">
@@ -2444,7 +2520,7 @@ function renderEntregas() {
 // Ouve mudanças do Firestore e atualiza todos os dispositivos em tempo real
 if (window.db) {
   function _tabAtiva() {
-    return ['b','i','c','e','d'].find(t =>
+    return ['b','i','ch','c','e','d','f'].find(t =>
       document.getElementById('tab-'+t)?.classList.contains('on')) || 'b';
   }
   // Provas: re-renderiza aba Eventos se estiver aberta
@@ -2456,6 +2532,16 @@ if (window.db) {
       if (_tabAtiva() === 'e') renderEventos();
     }
   }, e => console.warn('Sync provas:', e));
+  // Campeonatos: sync em tempo real
+  db.collection('ordens_config').doc('campeonatos').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const j = JSON.stringify(snap.data().items || []);
+    if (j !== localStorage.getItem(CAMP_KEY)) {
+      localStorage.setItem(CAMP_KEY, j);
+      if (_tabAtiva() === 'ch') renderCampeonatos();
+      populateCampSelect();
+    }
+  }, e => console.warn('Sync campeonatos:', e));
   // Clientes: re-renderiza aba Clientes se estiver aberta
   db.collection('ordens_config').doc('clientes').onSnapshot(snap => {
     if (!snap.exists) return;
@@ -2477,6 +2563,7 @@ if ('serviceWorker' in navigator && IS_LOCAL)
 
 (function init() {
   migrarClientes(); // migra dados antigos (entregues[]) para o novo modelo (pedidos[])
+  populateCampSelect();
   if (!load().length) {
     document.getElementById('results').innerHTML=`<div class="empty">
       <div class="eico">📥</div>
