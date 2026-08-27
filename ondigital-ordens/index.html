@@ -494,6 +494,11 @@ mark{background:rgba(201,168,76,.25);color:var(--gold2);border-radius:2px;paddin
 .fin-vid-row{font-size:11px;color:var(--gray);margin-top:6px}
 .fin-vid-bar{height:4px;background:var(--dim);border-radius:2px;overflow:hidden;margin-top:5px}
 .fin-vid-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .4s}
+.vid-ctrl-btn{padding:2px 9px;border-radius:4px;font-size:13px;font-weight:800;cursor:pointer;
+               border:1px solid var(--cb);background:var(--dim);color:var(--text);line-height:1.4;
+               transition:all .15s}
+.vid-ctrl-btn:hover:not(:disabled){background:rgba(201,168,76,.2);border-color:var(--gold);color:var(--gold)}
+.vid-ctrl-btn:disabled{opacity:.25;cursor:default}
 </style>
 </head>
 <body>
@@ -1520,21 +1525,19 @@ function renderFinanceiroTab() {
       ? `<div class="fin-v-num red">${fmtMoeda(s.deve)}</div>`
       : `<div class="fin-v-num green">Quitado ✓</div>`;
 
-    const pct  = s.qtdPac > 0 ? Math.min(100, Math.round(s.nEnv / s.qtdPac * 100)) : 0;
-    const barColor = pct === 100 ? 'var(--green)' : 'var(--gold)';
-    const pacBar = s.qtdPac > 0 ? `
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-        <div class="fin-vid-bar" style="flex:1">
-          <div class="fin-vid-fill" style="width:${pct}%;background:${barColor}"></div>
-        </div>
-        <div style="font-size:10px;color:var(--gray);flex-shrink:0">${s.nEnv}/${s.qtdPac}</div>
-      </div>` : '';
 
-    const vidTxt = (s.nEnv + s.nPend) > 0
-      ? `${s.nEnv} enviado(s)${s.nPend > 0
-          ? ` · <span style="color:#E05252">${s.nPend} pendente(s)</span>`
-          : ' · <span style="color:var(--green)">✅ tudo enviado</span>'}`
-      : `<span style="color:rgba(255,255,255,.25)">Sem vídeos vinculados</span>`;
+    const total = s.nEnv + s.nPend;
+    const vidTxt = total > 0
+      ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--gray)">Enviados:</span>
+          <button class="vid-ctrl-btn" ${s.nEnv===0?'disabled':''} onclick="setEnviados('${c.id}',${s.nEnv-1})">−</button>
+          <span style="font-weight:800;font-size:13px;color:${s.nEnv===total?'var(--green)':'var(--gold)'}">${s.nEnv}/${total}</span>
+          <button class="vid-ctrl-btn" ${s.nPend===0?'disabled':''} onclick="setEnviados('${c.id}',${s.nEnv+1})">+</button>
+          ${s.nPend > 0
+            ? `<span style="color:#E05252;font-size:11px">${s.nPend} pendente(s)</span>`
+            : `<span style="color:var(--green);font-size:11px">✅ todos enviados</span>`}
+        </div>`
+      : `<span style="color:rgba(255,255,255,.25);font-size:11px">Sem vídeos vinculados</span>`;
 
     return `<div class="fin-cli-card">
       <div class="fin-cc-top">
@@ -1557,7 +1560,6 @@ function renderFinanceiroTab() {
         </div>
       </div>
       <div class="fin-vid-row">${vidTxt}</div>
-      ${pacBar}
     </div>`;
   }
 
@@ -1641,6 +1643,20 @@ function salvarCampo(clientId, campo, valor) {
   if (!c) return;
   c[campo] = valor;
   saveClients(clients);
+}
+
+function setEnviados(clientId, target) {
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  const peds = c.pedidos || [];
+  const n = Math.max(0, Math.min(peds.length, target));
+  for (let i = 0; i < peds.length; i++) {
+    peds[i].status = i < n ? 'enviado' : 'pendente';
+  }
+  saveClients(clients);
+  renderClientes();
+  setTimeout(renderFinanceiroTab, 80);
 }
 
 function togglePagamento(clientId) {
