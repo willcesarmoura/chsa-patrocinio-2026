@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ON Digital · Ordens</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#08111E; --bg2:#0D1B2E; --bg3:#131E30;
+  --gold:#C9A84C; --gold2:#E8C96A;
+  --white:#FFF; --gray:rgba(255,255,255,.42);
+  --dim:rgba(255,255,255,.10); --dim2:rgba(255,255,255,.06);
+  --card:rgba(255,255,255,.04);
+  --cb:rgba(201,168,76,.22); --r:12px; --rs:8px;
+  --green:#4CAF72; --red:#E05252;
+  --blue:rgba(100,160,255,.85);
+}
+
+html,body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--white);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  -webkit-tap-highlight-color:transparent;overflow:hidden}
+
+.app{height:100%;height:-webkit-fill-available;display:flex;flex-direction:column;
+     max-width:520px;margin:0 auto}
+
+/* header */
+.hdr{flex-shrink:0;background:var(--bg);border-bottom:1px solid var(--dim);
+     padding:max(env(safe-area-inset-top),14px) 20px 0}
+.hdr-brand{font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+            color:var(--gold);margin-bottom:2px}
+.hdr-title{font-size:20px;font-weight:700;margin-bottom:14px}
+
+/* tabs */
+.tabs{display:flex;flex-shrink:0;background:var(--bg);border-bottom:1px solid var(--dim)}
+.tab{flex:1;padding:12px 2px;text-align:center;font-size:11px;font-weight:700;
+     letter-spacing:.5px;text-transform:uppercase;color:var(--gray);cursor:pointer;
+     border-bottom:2px solid transparent;transition:all .2s;user-select:none;line-height:1.3}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* screens */
+.scr{display:none;flex:1;overflow-y:auto;overflow-x:hidden;
+     padding:16px 20px;padding-bottom:max(env(safe-area-inset-bottom,16px),80px);
+     -webkit-overflow-scrolling:touch}
+.scr.on{display:flex;flex-direction:column;gap:14px}
+.scr::-webkit-scrollbar{width:3px}
+.scr::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
+
+/* toggle row */
+.trow{display:flex;gap:8px}
+.tbtn{flex:1;padding:11px 8px;border:1.5px solid var(--dim);border-radius:var(--rs);
+       background:transparent;color:var(--gray);font-size:13px;font-weight:700;
+       cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:1px}
+.tbtn.on{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.09)}
+
+/* search */
+.swrap{position:relative}
+.sico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gray);font-size:17px;pointer-events:none}
+.sinput{width:100%;padding:14px 16px 14px 44px;background:var(--card);
+         border:1.5px solid var(--dim);border-radius:var(--r);color:var(--white);
+         font-size:16px;outline:none;transition:border-color .2s}
+.sinput::placeholder{color:rgba(255,255,255,.22)}
+.sinput:focus{border-color:var(--gold)}
+.rlbl{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+       color:var(--gray);min-height:16px}
+
+/* result cards */
+.card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:14px 16px}
+.cmain{font-size:15px;font-weight:700;color:var(--gold);margin-bottom:7px;line-height:1.3}
+.csec{font-size:14px;font-weight:600;color:var(--white);margin-bottom:6px}
+.cmeta{font-size:12px;color:var(--gray);line-height:1.8}
+.cmeta b{color:rgba(255,255,255,.65);font-weight:600}
+.divl{height:1px;background:var(--dim);margin:10px 0}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;
+        background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.3);
+        color:var(--gold);font-size:11px;font-weight:700;letter-spacing:1px}
+
+/* client badge on buscar result */
+.cli-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;margin-bottom:8px;
+            border-radius:6px;background:rgba(76,175,114,.1);border:1px solid rgba(76,175,114,.3);
+            color:var(--green);font-size:12px;font-weight:700}
+
+/* empty state */
+.empty{text-align:center;padding:48px 20px;color:var(--gray)}
+.eico{font-size:48px;margin-bottom:14px}
+.etit{font-size:16px;font-weight:700;color:rgba(255,255,255,.55);margin-bottom:6px}
+.esub{font-size:13px;line-height:1.6}
+
+/* form elements */
+.flbl{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+       color:var(--gray);margin-bottom:8px;display:block}
+.inp{width:100%;padding:12px 14px;background:var(--card);border:1.5px solid var(--dim);
+      border-radius:var(--rs);color:var(--white);font-size:14px;outline:none;
+      transition:border-color .2s}
+.inp::placeholder{color:rgba(255,255,255,.25)}
+.inp:focus{border-color:var(--gold)}
+.ta{width:100%;padding:12px 14px;background:var(--card);border:1.5px solid var(--dim);
+     border-radius:var(--r);color:var(--white);font-size:13px;outline:none;
+     resize:vertical;transition:border-color .2s;line-height:1.7;min-height:80px}
+.ta::placeholder{color:rgba(255,255,255,.18);font-style:italic}
+.ta:focus{border-color:var(--gold)}
+.ta.mono{font-family:monospace;font-size:12px;min-height:100px}
+
+/* buttons */
+.btn{width:100%;padding:15px;border:none;border-radius:var(--r);font-size:14px;
+      font-weight:800;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s}
+.btn:active{opacity:.8}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-gold{background:var(--gold);color:#08111E}
+.btn-outline{background:transparent;border:1.5px solid var(--dim);color:var(--gray);padding:12px}
+
+/* status */
+.st{padding:12px 14px;border-radius:var(--rs);font-size:13px;font-weight:500;line-height:1.5}
+.st-info{background:rgba(201,168,76,.09);border:1px solid rgba(201,168,76,.28);color:var(--gold)}
+.st-err{background:rgba(220,50,50,.09);border:1px solid rgba(220,50,50,.28);color:#ff8080}
+.st-ok{background:rgba(50,200,100,.09);border:1px solid rgba(50,200,100,.28);color:#6fe09a}
+
+/* ── CLIENTES ─────────────────────────────────────────────────── */
+
+/* add form */
+.add-form{background:var(--bg3);border:1px solid var(--cb);border-radius:var(--r);
+           padding:16px;display:flex;flex-direction:column;gap:12px}
+.add-form-title{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+                 color:var(--gold)}
+
+/* tags: cavalos (gold) and cavaleiros (blue) */
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.tag-cav{background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.35);color:var(--gold)}
+.tag-rid{background:rgba(100,160,255,.1);border:1px solid rgba(100,160,255,.3);color:var(--blue)}
+
+/* client card */
+.cli-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);
+           overflow:visible;margin-bottom:10px}
+.cli-top{padding:14px 16px}
+.cli-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.cli-name{font-size:16px;font-weight:700;color:var(--white);line-height:1.2}
+.cli-right{display:flex;gap:6px;flex-shrink:0}
+.cli-wa{display:inline-flex;align-items:center;padding:6px 11px;border-radius:6px;
+         background:rgba(76,175,114,.15);border:1px solid rgba(76,175,114,.35);
+         color:var(--green);font-size:13px;font-weight:700;text-decoration:none;cursor:pointer}
+.cli-wa:active{opacity:.7}
+.cli-del{padding:6px 10px;border-radius:6px;background:rgba(220,50,50,.1);
+          border:1px solid rgba(220,50,50,.3);color:#ff8080;font-size:13px;
+          font-weight:700;cursor:pointer}
+.cli-fone{font-size:12px;color:var(--gray);margin-bottom:6px}
+.obs-edit{width:100%;font-size:12px;color:rgba(255,255,255,.6);font-style:italic;
+           padding:6px 10px;background:var(--dim2);border:1px solid transparent;
+           border-radius:6px;margin-top:6px;line-height:1.5;resize:none;min-height:38px;
+           font-family:inherit}
+.obs-edit:focus{border-color:var(--cb);outline:none;background:var(--bg3)}
+.cli-vals{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.val-item{flex:1;min-width:120px}
+.val-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--gray);margin-bottom:3px}
+.val-inp{width:100%;padding:5px 9px;border-radius:6px;background:var(--dim2);
+          border:1px solid transparent;color:var(--white);font-size:13px;font-family:inherit}
+.val-inp:focus{border-color:var(--cb);outline:none;background:var(--bg3)}
+
+/* matched entries */
+.cli-matches{border-top:1px solid var(--dim);background:rgba(0,0,0,.15)}
+.cli-matches-hdr{padding:8px 16px;font-size:10px;font-weight:700;letter-spacing:2px;
+                  text-transform:uppercase;color:var(--gray)}
+.cli-matches-hdr.found{color:var(--green)}
+.cli-entry{display:flex;align-items:center;gap:10px;padding:9px 16px;
+            border-top:1px solid rgba(255,255,255,.05)}
+.cli-ord{font-size:18px;font-weight:800;color:var(--gold);min-width:32px;line-height:1}
+.cli-einfo{flex:1;min-width:0}
+.cli-eprova{font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;
+             overflow:hidden;text-overflow:ellipsis}
+.cli-edetail{font-size:11px;color:var(--gray);margin-top:2px;line-height:1.5}
+.cli-no-match{padding:10px 16px;font-size:12px;color:var(--gray);font-style:italic}
+.entrega-btn{padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;
+              cursor:pointer;border:1px solid;letter-spacing:.5px;transition:all .15s;white-space:nowrap}
+.entrega-pend{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);
+               color:rgba(255,255,255,.35)}
+.entrega-ok{background:rgba(76,175,114,.18);border-color:rgba(76,175,114,.45);color:var(--green)}
+.pag-btn{padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;
+          cursor:pointer;border:1px solid;letter-spacing:.3px;transition:all .15s;white-space:nowrap}
+.pag-pend{background:rgba(224,82,82,.15);border-color:rgba(224,82,82,.4);color:#E05252}
+.pag-parc{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);color:var(--gold)}
+.pag-ok  {background:rgba(76,175,114,.18);border-color:rgba(76,175,114,.45);color:var(--green)}
+.fin-card{display:flex;gap:8px;padding:14px 16px;background:var(--bg2);
+           border-bottom:1px solid var(--dim);flex-wrap:wrap}
+.fin-item{flex:1;min-width:85px;padding:10px 12px;background:var(--card);
+           border:1px solid var(--dim);border-radius:var(--rs);text-align:center}
+.fin-lbl{font-size:9px;font-weight:800;letter-spacing:1.2px;color:var(--gray);margin-bottom:5px}
+.fin-val{font-size:17px;font-weight:800}
+.fin-val-gold{color:var(--gold)}
+.fin-val-green{color:var(--green)}
+.fin-val-red{color:#E05252}
+.entry-new{background:rgba(201,168,76,.05);border-left:2px solid var(--gold)}
+.new-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1px;
+            background:var(--gold);color:#08111E;border-radius:3px;padding:1px 5px;
+            vertical-align:middle;margin-left:4px}
+
+/* import match summary */
+.match-box{background:rgba(76,175,114,.07);border:1px solid rgba(76,175,114,.3);
+            border-radius:var(--r);padding:14px 16px}
+.match-hdr{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+            color:var(--green);margin-bottom:10px}
+.match-cli{padding:8px 0;border-top:1px solid rgba(255,255,255,.07)}
+.match-cli:first-of-type{border-top:none;padding-top:0}
+.match-cli-name{font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px}
+.match-provas{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.wa-link{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;
+          background:rgba(76,175,114,.18);border:1px solid rgba(76,175,114,.4);
+          color:var(--green);font-size:12px;font-weight:700;text-decoration:none}
+
+/* eventos */
+.evitem{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);
+         padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+         gap:12px;margin-bottom:10px}
+.evleft{flex:1;min-width:0}
+.evprova{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;
+          text-overflow:ellipsis;margin-bottom:4px}
+.evsub{font-size:12px;color:var(--gray)}
+.btn-del{background:rgba(220,50,50,.14);border:1px solid rgba(220,50,50,.28);
+          color:#ff8080;padding:8px 12px;border-radius:6px;font-size:13px;
+          font-weight:700;cursor:pointer;flex-shrink:0}
+.statsbar{background:var(--bg3);border:1px solid var(--dim);border-radius:var(--r);
+           padding:14px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;
+           text-align:center;gap:4px}
+.sval{font-size:24px;font-weight:800;color:var(--gold);line-height:1}
+.slbl{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+       color:var(--gray);margin-top:4px}
+.clrbtn{width:100%;padding:12px;background:transparent;border:1.5px solid rgba(220,50,50,.3);
+         border-radius:var(--r);color:rgba(220,50,50,.7);font-size:13px;font-weight:700;
+         letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+
+/* manual import */
+.manual-section{border:1px solid var(--dim);border-radius:var(--r);overflow:hidden}
+.manual-toggle{width:100%;padding:13px 16px;background:transparent;border:none;
+                color:var(--gray);font-size:13px;font-weight:700;text-align:left;
+                cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+                letter-spacing:1px;text-transform:uppercase}
+.manual-toggle:hover{color:var(--white)}
+.manual-body{padding:16px;display:none;flex-direction:column;gap:12px;
+              border-top:1px solid var(--dim);background:var(--dim2)}
+.manual-body.open{display:flex}
+.hintbox{background:var(--bg3);border:1px solid var(--dim);border-radius:var(--r);padding:14px 16px}
+.hint{font-size:13px;color:var(--gray);padding:3px 0;display:flex;gap:8px;line-height:1.5}
+.hd{color:var(--gold);flex-shrink:0}
+
+/* misc */
+mark{background:rgba(201,168,76,.25);color:var(--gold2);border-radius:2px;padding:0 1px}
+.sep{font-size:12px;color:var(--gray);text-align:center;letter-spacing:2px;
+      display:flex;align-items:center;gap:10px}
+.sep::before,.sep::after{content:'';flex:1;height:1px;background:var(--dim)}
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(8,17,30,.3);
+          border-top-color:#08111E;border-radius:50%;animation:spin .8s linear infinite;
+          vertical-align:middle;margin-right:7px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.warn-banner{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);
+              border-radius:var(--rs);padding:10px 14px;font-size:12px;color:var(--gold);
+              line-height:1.6;display:none}
+
+/* ── PEDIDOS ─────────────────────────────────────────────── */
+.cli-prova-grp{border-top:1px solid var(--dim)}
+.cli-prova-nm{padding:7px 16px 5px;font-size:10px;font-weight:800;letter-spacing:1.5px;
+               text-transform:uppercase;color:rgba(255,255,255,.35);background:rgba(0,0,0,.12)}
+.cli-aguard-hdr{padding:7px 16px 5px;font-size:10px;font-weight:800;letter-spacing:1.5px;
+                 text-transform:uppercase;color:var(--gold);background:rgba(201,168,76,.07);
+                 display:flex;align-items:center;gap:6px}
+.ped-row{display:flex;align-items:center;gap:10px;padding:9px 16px;
+          border-top:1px solid rgba(255,255,255,.05)}
+.ped-row.aguard{background:rgba(201,168,76,.04)}
+.ped-row.desc{opacity:.3}
+.ped-ord{font-size:17px;font-weight:800;color:var(--gold);min-width:30px;line-height:1;flex-shrink:0}
+.ped-info{flex:1;min-width:0}
+.ped-horse{font-size:13px;font-weight:700;color:var(--white)}
+.ped-rider{font-size:11px;color:var(--gray);margin-top:1px}
+.ped-actions{display:flex;gap:5px;flex-shrink:0}
+.ped-btn{padding:5px 10px;border-radius:5px;font-size:11px;font-weight:700;
+          cursor:pointer;border:1px solid;letter-spacing:.3px;transition:all .15s;white-space:nowrap}
+.pb-sim{background:rgba(76,175,114,.2);border-color:rgba(76,175,114,.5);color:var(--green)}
+.pb-nao{background:rgba(80,80,80,.1);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.3);font-size:10px}
+.pb-pend{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
+.pb-entregue{background:rgba(76,175,114,.18);border-color:rgba(76,175,114,.45);color:var(--green)}
+
+/* ── EVENTOS (redesign) ──────────────────────────────────── */
+.ev-prova-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);
+                overflow:hidden;margin-bottom:12px}
+.ev-prova-hdr{padding:13px 16px;display:flex;align-items:center;gap:10px;
+               cursor:pointer;user-select:none}
+.ev-prova-left{flex:1;min-width:0}
+.ev-prova-nm{font-size:14px;font-weight:700;color:var(--white)}
+.ev-prova-sub{font-size:12px;color:var(--gray);margin-top:2px}
+.ev-prova-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ev-entries{display:none;border-top:1px solid var(--dim)}
+.ev-entries.open{display:block}
+.ev-entry{display:flex;align-items:center;gap:10px;padding:8px 14px;
+           border-top:1px solid rgba(255,255,255,.04)}
+.ev-ord{font-size:15px;font-weight:800;color:var(--gold);min-width:28px;flex-shrink:0}
+.ev-einfo{flex:1;min-width:0}
+.ev-horse{font-size:13px;font-weight:600;color:var(--white)}
+.ev-rider{font-size:11px;color:var(--gray)}
+.ev-cli-btn{font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;
+             cursor:pointer;border:1px solid;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.ev-cli-aguard{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:var(--gold)}
+.ev-cli-pend{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
+.ev-cli-ok{background:rgba(76,175,114,.15);border-color:rgba(76,175,114,.35);color:var(--green)}
+.ev-no-cli{font-size:11px;color:rgba(255,255,255,.18);flex-shrink:0}
+
+/* ── ENTREGAS ────────────────────────────────────────────── */
+.ent-summary{display:flex;gap:8px;padding:12px 16px;background:var(--bg2);
+              border-bottom:1px solid var(--dim);flex-wrap:wrap}
+.ent-sum-item{flex:1;min-width:80px;padding:8px 10px;background:var(--card);
+               border:1px solid var(--dim);border-radius:var(--rs);text-align:center}
+.ent-sum-lbl{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--gray);margin-bottom:4px}
+.ent-sum-val{font-size:18px;font-weight:800}
+.ent-section-hdr{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+                  color:var(--gray);padding:4px 0 8px}
+.ent-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);
+           overflow:hidden;margin-bottom:10px}
+.ent-card-hdr{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+               border-bottom:1px solid var(--dim)}
+.ent-cli-nm{font-size:15px;font-weight:700;color:var(--white)}
+.ent-cli-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-marcar-all{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;
+                 cursor:pointer;border:1px solid rgba(76,175,114,.4);
+                 background:rgba(76,175,114,.15);color:var(--green);white-space:nowrap}
+.ent-row{display:flex;align-items:center;gap:10px;padding:9px 14px;
+          border-top:1px solid rgba(255,255,255,.05)}
+.ent-ord{font-size:15px;font-weight:800;color:var(--gold);min-width:28px;flex-shrink:0}
+.ent-info{flex:1;min-width:0}
+.ent-horse{font-size:13px;font-weight:700;color:var(--white)}
+.ent-rider{font-size:11px;color:var(--gray);margin-top:1px}
+.ent-prova{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px}
+.ent-btn{padding:5px 10px;border-radius:5px;font-size:11px;font-weight:700;
+          cursor:pointer;border:1px solid;transition:all .15s;white-space:nowrap}
+.ent-btn-pend{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.6)}
+.ent-btn-ok{background:rgba(76,175,114,.18);border-color:rgba(76,175,114,.45);color:var(--green)}
+
+/* ── PACOTE ──────────────────────────────────────────────── */
+.pacote-row{display:flex;align-items:center;gap:10px;padding:8px 16px;
+             border-top:1px solid var(--dim);background:rgba(0,0,0,.12);flex-wrap:wrap}
+.pacote-lbl{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--gray);
+             text-transform:uppercase;white-space:nowrap}
+.pacote-inp{width:52px;padding:4px 8px;border-radius:6px;background:var(--dim2);
+             border:1px solid transparent;color:var(--gold);font-size:14px;font-weight:800;
+             font-family:inherit;text-align:center}
+.pacote-inp:focus{border-color:var(--cb);outline:none;background:var(--bg3)}
+.pacote-rest{font-size:13px;font-weight:700;color:var(--white)}
+.pacote-rest.zero{color:var(--green)}
+.pacote-rest.neg{color:#E05252}
+.pacote-prog{flex:1;min-width:80px;height:5px;background:var(--dim);
+              border-radius:3px;overflow:hidden}
+.pacote-fill{height:100%;border-radius:3px;background:var(--gold);transition:width .3s}
+
+/* ── EVENTOS com cliente ─────────────────────────────────── */
+.ev-entry.tem-cli{background:rgba(220,70,70,.09);border-left:3px solid rgba(220,70,70,.55)}
+.ev-entry.tem-cli .ev-horse{color:#ff9a9a}
+
+/* ── BUSCA ENTRADAS (formulário e card) ──────────────────── */
+.busca-wrap{position:relative}
+.busca-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;
+             background:var(--bg3);border:1px solid var(--cb);border-radius:var(--rs);
+             max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.busca-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+             cursor:default;border-bottom:1px solid var(--dim)}
+.busca-item:last-child{border-bottom:none}
+.busca-item:hover{background:rgba(201,168,76,.06)}
+.busca-item-ord{font-size:14px;font-weight:800;color:var(--gold);min-width:32px;flex-shrink:0}
+.busca-item-info{flex:1;min-width:0}
+.busca-item-cav{font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.busca-item-sub{font-size:11px;color:var(--gray);margin-top:1px}
+.busca-item-add{flex-shrink:0;padding:5px 11px;background:rgba(201,168,76,.15);
+                 border:1px solid rgba(201,168,76,.4);border-radius:5px;
+                 color:var(--gold);font-size:12px;font-weight:700;cursor:pointer}
+
+/* ── FORM — entradas selecionadas ───────────────────────── */
+.form-peds{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.form-ped-row{display:flex;align-items:center;gap:10px;padding:9px 12px;
+               background:var(--dim2);border-radius:8px;border:1px solid var(--dim)}
+.form-ped-ord{font-size:14px;font-weight:800;color:var(--gold);min-width:30px;flex-shrink:0}
+.form-ped-info{flex:1;min-width:0}
+.form-ped-cav{font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.form-ped-sub{font-size:11px;color:var(--gray);margin-top:1px}
+.form-ped-rm{padding:4px 8px;background:rgba(220,50,50,.1);border:1px solid rgba(220,50,50,.3);
+              border-radius:5px;color:#ff8080;font-size:12px;cursor:pointer;flex-shrink:0}
+
+/* ── SALDO VÍDEOS no card do cliente ──────────────────────── */
+.saldo-row{display:flex;align-items:center;gap:12px;padding:10px 16px;
+            border-top:1px solid var(--dim);background:rgba(0,0,0,.12);flex-wrap:wrap}
+.saldo-nums{display:flex;gap:14px}
+.saldo-item{display:flex;flex-direction:column;align-items:center;min-width:36px}
+.saldo-num{font-size:20px;font-weight:800;line-height:1}
+.saldo-lbl{font-size:9px;font-weight:700;letter-spacing:1.2px;color:var(--gray);
+            margin-top:3px;text-transform:uppercase}
+.saldo-prog{flex:1;min-width:60px;height:6px;background:var(--dim);
+             border-radius:3px;align-self:center;overflow:hidden}
+.saldo-fill{height:100%;border-radius:3px;background:var(--gold);transition:width .4s}
+
+/* ── ADD ENTRY inline no card ────────────────────────────── */
+.cli-add-entry{position:relative;padding:8px 14px 10px;border-top:1px solid var(--dim)}
+.cli-add-inp{width:100%;padding:8px 12px;background:transparent;
+              border:1px dashed rgba(255,255,255,.12);border-radius:8px;
+              color:rgba(255,255,255,.4);font-size:12px;font-style:italic;
+              outline:none;font-family:inherit;box-sizing:border-box}
+.cli-add-inp:focus{border-color:var(--cb);color:var(--white);font-style:normal;background:var(--dim2)}
+.cli-add-inp::placeholder{color:rgba(255,255,255,.18)}
+
+/* ── MANUAL ADD ──────────────────────────────────────────── */
+.busca-manual-link{padding:10px 14px;font-size:12px;color:rgba(255,255,255,.35);
+                    cursor:pointer;border-top:1px solid var(--dim);text-align:center}
+.busca-manual-link:hover{color:var(--gold);background:rgba(201,168,76,.06)}
+.manual-form{padding:12px 14px;border-top:1px solid var(--dim);background:rgba(201,168,76,.04);
+              display:flex;flex-direction:column;gap:8px}
+.manual-form-row{display:flex;gap:8px}
+.manual-inp{flex:1;padding:8px 10px;background:var(--dim2);border:1px solid var(--dim);
+             border-radius:6px;color:var(--white);font-size:12px;font-family:inherit;
+             outline:none;min-width:0}
+.manual-inp:focus{border-color:var(--gold)}
+.manual-inp::placeholder{color:rgba(255,255,255,.2);font-style:italic}
+.manual-btn{padding:8px 14px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);
+             border-radius:6px;color:var(--gold);font-size:12px;font-weight:700;
+             cursor:pointer;white-space:nowrap}
+
+/* ── PED-ROW simplificado ────────────────────────────────── */
+.ped-row.enviado{opacity:.55}
+.ped-btn.pb-env{background:rgba(76,175,114,.18);border:1px solid rgba(76,175,114,.45);color:var(--green)}
+.ped-btn.pb-pend2{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
+
+/* Edição inline do cliente */
+.cli-edit-form{padding:12px 14px;border-top:1px solid var(--dim);background:rgba(201,168,76,.04)}
+.edit-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.edit-inp{width:100%;padding:8px 10px;background:var(--dim2);border:1px solid var(--dim);
+           border-radius:6px;color:var(--white);font-size:13px;font-family:inherit;outline:none;
+           resize:vertical;transition:border-color .2s}
+.edit-inp:focus{border-color:var(--gold)}
+.edit-inp::placeholder{color:rgba(255,255,255,.25)}
+.edit-lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray);margin-bottom:2px}
+.edit-save-btn{width:100%;padding:10px;background:rgba(201,168,76,.15);
+                border:1px solid rgba(201,168,76,.4);border-radius:6px;
+                color:var(--gold);font-size:12px;font-weight:700;cursor:pointer}
+.cli-edit-ico{padding:4px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+               border-radius:5px;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;flex-shrink:0}
+.cli-edit-ico:hover{border-color:var(--gold);color:var(--gold)}
+
+/* Agrupamento por evento na aba Eventos */
+.ev-evt-grp{margin-bottom:18px}
+.ev-evt-hdr{padding:10px 14px 8px;background:rgba(201,168,76,.08);
+             border:1px solid rgba(201,168,76,.3);border-radius:var(--rs);margin-bottom:6px}
+.ev-evt-nm{font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px}
+.ev-evt-sub{font-size:11px;color:var(--gray);margin-top:2px}
+
+/* ── Aba Financeiro ── */
+.fin-empty{padding:24px;text-align:center;color:var(--gray);font-size:13px}
+
+/* Barra global */
+.fin-global-bar{display:flex;gap:0;margin-bottom:16px;background:var(--card);
+                 border:1px solid var(--cb);border-radius:var(--r);overflow:hidden}
+.fin-gb-item{flex:1;padding:12px 10px;text-align:center;border-right:1px solid var(--dim)}
+.fin-gb-item:last-child{border-right:none}
+.fin-gb-lbl{font-size:8px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase}
+.fin-gb-val{font-size:15px;font-weight:800;margin-top:4px;line-height:1.1}
+.fin-gb-val.gold{color:var(--gold)}
+.fin-gb-val.green{color:var(--green)}
+.fin-gb-val.red{color:#E05252}
+
+/* Seção por evento */
+.fin-evt-grp{margin-bottom:22px}
+.fin-evt-hdr{padding:10px 14px 9px;background:rgba(201,168,76,.08);
+              border:1px solid rgba(201,168,76,.3);border-radius:var(--rs);margin-bottom:8px}
+.fin-evt-nm{font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px;margin-bottom:5px}
+.fin-evt-pills{display:flex;gap:5px;flex-wrap:wrap}
+.fin-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;font-size:10px;letter-spacing:.3px}
+.fin-pill-gold{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);color:var(--gold)}
+.fin-pill-red{background:rgba(220,80,80,.12);border:1px solid rgba(220,80,80,.3);color:#E05252}
+.fin-pill-green{background:rgba(76,175,114,.12);border:1px solid rgba(76,175,114,.3);color:var(--green)}
+.fin-pill-blue{background:rgba(100,160,255,.1);border:1px solid rgba(100,160,255,.25);color:var(--blue)}
+.fin-pill-gray{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--gray)}
+
+/* Card de cliente no financeiro */
+.fin-cli-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--rs);
+               padding:11px 13px;margin-bottom:7px}
+.fin-cc-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.fin-cc-nm{font-size:13px;font-weight:700;flex:1;min-width:0;overflow:hidden;
+            text-overflow:ellipsis;white-space:nowrap}
+.fin-wa-ico{font-size:14px;text-decoration:none;padding:3px 7px;
+             background:rgba(201,168,76,.1);border-radius:5px;flex-shrink:0}
+.fin-cc-vals{display:flex;gap:12px;border-top:1px solid var(--dim);padding-top:8px;flex-wrap:wrap}
+.fin-v{min-width:68px}
+.fin-v-lbl{font-size:8px;font-weight:700;letter-spacing:1.5px;color:var(--gray);text-transform:uppercase}
+.fin-v-num{font-size:14px;font-weight:800;margin-top:2px}
+.fin-v-num.gold{color:var(--gold)}
+.fin-v-num.green{color:var(--green)}
+.fin-v-num.red{color:#E05252}
+.fin-v-num.orange{color:#E8A840}
+.fin-vid-row{font-size:11px;color:var(--gray);margin-top:6px}
+.fin-vid-bar{height:4px;background:var(--dim);border-radius:2px;overflow:hidden;margin-top:5px}
+.fin-vid-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .4s}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-brand">ON Digital</div>
+    <div class="hdr-title">Gestão de Ordens</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab on" id="tab-b" onclick="goTab('b')">🔍 Buscar</div>
+    <div class="tab"    id="tab-i" onclick="goTab('i')">📥 Importar</div>
+    <div class="tab"    id="tab-c" onclick="goTab('c')">👥 Clientes</div>
+    <div class="tab"    id="tab-e" onclick="goTab('e')">📋 Eventos</div>
+    <div class="tab"    id="tab-d" onclick="goTab('d')">📤 Entregas</div>
+    <div class="tab"    id="tab-f" onclick="goTab('f')">💰 Fin.</div>
+  </div>
+
+  <!-- ═══ BUSCAR ═══ -->
+  <div class="scr on" id="scr-b">
+    <div id="server-warn" class="warn-banner">
+      ⚠ Para importar, use o <b>iniciar.bat</b> e acesse pelo navegador.
+    </div>
+    <div class="trow">
+      <button class="tbtn on" id="btn-cav"  onclick="setModo('cavalo')">🐎 Cavalo</button>
+      <button class="tbtn"    id="btn-cav2" onclick="setModo('cavaleiro')">👤 Cavaleiro</button>
+    </div>
+    <div class="swrap">
+      <span class="sico">🔍</span>
+      <input class="sinput" id="sinput" type="search" autocomplete="off"
+             placeholder="Nome do cavalo..." oninput="buscar()">
+    </div>
+    <div class="rlbl" id="rlbl"></div>
+    <div id="results"></div>
+  </div>
+
+  <!-- ═══ IMPORTAR ═══ -->
+  <div class="scr" id="scr-i">
+    <div>
+      <label class="flbl">URLs das Ordens de Entrada</label>
+      <textarea class="ta mono" id="url-ta" style="min-height:110px"
+        placeholder="Cole um link por linha:
+https://chsa-inscricao.macronetwork.com.br/calendario/OrdemEntrada?ID=13419
+https://chsa-inscricao.macronetwork.com.br/calendario/OrdemEntrada?ID=13420"></textarea>
+    </div>
+    <button class="btn btn-gold" id="btn-imp" onclick="importarAuto()">
+      Importar Automático
+    </button>
+    <div id="imp-st"></div>
+
+    <div class="sep">ou</div>
+
+    <div class="manual-section">
+      <button class="manual-toggle" onclick="toggleManual()">
+        <span>📋 Importar Manualmente</span>
+        <span id="arrow-m">▼</span>
+      </button>
+      <div class="manual-body" id="manual-body">
+        <div class="hintbox">
+          <div class="flbl" style="margin-bottom:8px">Como fazer</div>
+          <div class="hint"><span class="hd">1.</span> Abra o link no navegador</div>
+          <div class="hint"><span class="hd">2.</span> Ctrl+A → Ctrl+C para copiar tudo</div>
+          <div class="hint"><span class="hd">3.</span> Cole abaixo com Ctrl+V</div>
+        </div>
+        <div>
+          <label class="flbl">URL (para identificação)</label>
+          <input class="inp" id="manual-url" type="url"
+                 placeholder="https://chsa-inscricao.macronetwork.com.br/...">
+        </div>
+        <div>
+          <label class="flbl">Conteúdo da página</label>
+          <textarea class="ta" id="manual-txt" style="min-height:110px"
+                    placeholder="Cole aqui o texto copiado da página..."></textarea>
+        </div>
+        <button class="btn btn-gold" onclick="importarManual()">Importar Texto</button>
+        <div id="manual-st"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CLIENTES ═══ -->
+  <div class="scr" id="scr-c">
+
+    <!-- Resumo financeiro -->
+    <div id="fin-summary"></div>
+
+    <!-- Formulário de cadastro -->
+    <div class="add-form">
+      <div class="add-form-title">+ Novo Cliente</div>
+
+      <div>
+        <label class="flbl">Nome do cliente</label>
+        <input class="inp" id="cli-nome" placeholder="Ex: Carlos Oliveira" autocomplete="off">
+      </div>
+
+      <div>
+        <label class="flbl">WhatsApp <span style="color:var(--gray);font-size:10px">(opcional)</span></label>
+        <input class="inp" id="cli-fone" type="tel" placeholder="(11) 99999-0000" autocomplete="off">
+      </div>
+
+      <!-- Busca direta na ordem de entrada -->
+      <div>
+        <label class="flbl">🔍 Buscar entradas <span style="color:var(--gold);font-size:10px">(cavalo ou cavaleiro)</span></label>
+        <div class="busca-wrap">
+          <input class="inp" id="cli-busca" placeholder="Nome do cavalo ou cavaleiro..." autocomplete="off"
+            oninput="buscarEntradasForm(this.value)"
+            onfocus="buscarEntradasForm(this.value)"
+            onblur="setTimeout(()=>{const d=document.getElementById('cli-busca-drop');if(d&&!d.contains(document.activeElement))d.style.display='none'},200)">
+          <div class="busca-drop" id="cli-busca-drop" style="display:none"></div>
+        </div>
+        <div class="form-peds" id="cli-pedidos-form"></div>
+      </div>
+
+      <!-- Auto-matching por nome (provas futuras) -->
+      <details>
+        <summary style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.3);
+          cursor:pointer;list-style:none;padding:4px 0;text-transform:uppercase">
+          ▸ Matching automático (cavalos / cavaleiros)
+        </summary>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+          <div>
+            <label class="flbl">Cavalos <span style="color:var(--gold);font-size:10px">(um por linha)</span></label>
+            <textarea class="ta" id="cli-cavalos" style="min-height:60px"
+              placeholder="Furação do Vento&#10;Ventania"></textarea>
+          </div>
+          <div>
+            <label class="flbl">Cavaleiros <span style="color:var(--blue);font-size:10px">(um por linha)</span></label>
+            <textarea class="ta" id="cli-cavaleiros" style="min-height:60px"
+              placeholder="João da Silva"></textarea>
+          </div>
+        </div>
+      </details>
+
+      <div>
+        <label class="flbl">Observação <span style="color:var(--gray);font-size:10px">(opcional)</span></label>
+        <textarea class="ta" id="cli-obs" style="min-height:50px"
+          placeholder="Ex: quer só os videos do cross, paga em 2x..."></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label class="flbl">Qtd vídeos <span style="color:var(--gray);font-size:10px">(pacote)</span></label>
+          <input class="inp" id="cli-qtd-pacote" type="number" min="0" placeholder="0" autocomplete="off">
+        </div>
+        <div style="flex:1">
+          <label class="flbl">Preço/vídeo <span style="color:var(--gray);font-size:10px">(R$)</span></label>
+          <input class="inp" id="cli-preco-video" type="number" min="0" step="0.01" placeholder="0,00" autocomplete="off">
+        </div>
+      </div>
+
+      <div>
+        <label class="flbl">Valor cobrado <span style="color:var(--gray);font-size:10px">(total)</span></label>
+        <input class="inp" id="cli-val-cobrado" type="text" placeholder="R$ 0,00" autocomplete="off">
+      </div>
+
+      <div>
+        <label class="flbl">Status de pagamento</label>
+        <select class="inp" id="cli-pag" onchange="toggleValPagoForm()">
+          <option value="pendente">Não pago</option>
+          <option value="parcial">Pago parcial</option>
+          <option value="pago">Pago</option>
+        </select>
+      </div>
+
+      <div id="form-val-pago" style="display:none">
+        <label class="flbl">Valor já pago</label>
+        <input class="inp" id="cli-val-pago" type="text" placeholder="R$ 0,00" autocomplete="off">
+      </div>
+
+      <button class="btn btn-gold" onclick="adicionarCliente()">+ Salvar Cliente</button>
+    </div>
+
+    <div id="cli-list"></div>
+
+  </div>
+
+  <!-- ═══ EVENTOS ═══ -->
+  <div class="scr" id="scr-e">
+    <div id="statsbar-wrap"></div>
+    <div id="ev-list"></div>
+    <button class="clrbtn" id="btn-clr" onclick="limpar()" style="display:none">
+      Apagar Todos os Dados de Provas
+    </button>
+  </div>
+
+  <!-- ═══ ENTREGAS ═══ -->
+  <div class="scr" id="scr-d">
+    <div id="ent-summary"></div>
+    <div id="ent-list"></div>
+  </div>
+
+  <!-- ═══ FINANCEIRO ═══ -->
+  <div class="scr" id="scr-f">
+    <div id="fin-det"></div>
+  </div>
+
+</div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── CONTEXTO ─────────────────────────────────────────────────────────
+// Considera "local" qualquer acesso via porta 3131 (servidor do iniciar.bat)
+const IS_LOCAL = location.hostname === 'localhost' ||
+                 location.hostname === '127.0.0.1' ||
+                 location.port === '3131';
+const IS_FILE  = location.protocol === 'file:';
+if (IS_FILE) document.getElementById('server-warn').style.display = 'block';
+
+// ── FIREBASE ──────────────────────────────────────────────────────────
+// Após criar o projeto Firebase, substitua os "COLE_AQUI" pelos valores reais
+try {
+  firebase.initializeApp({
+    apiKey:            "AIzaSyDu_cAbhnck8fnd5uHlmcUQh9Mlx9L-n24",
+    authDomain:        "on-digital-ordem.firebaseapp.com",
+    projectId:         "on-digital-ordem",
+    storageBucket:     "on-digital-ordem.firebasestorage.app",
+    messagingSenderId: "353301628354",
+    appId:             "1:353301628354:web:c66553fa9e1143ea66825b"
+  });
+  window.db = firebase.firestore();
+} catch(e) {
+  console.warn('Firebase não iniciado:', e.message);
+  window.db = null;
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────
+const KEY     = 'on_digital_ordens_v2';
+const CLI_KEY = 'on_ordens_cli_v2';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+  catch { return window._memDados || []; }
+}
+function save(d) {
+  try { localStorage.setItem(KEY, JSON.stringify(d)); }
+  catch { window._memDados = d; }
+  if (window.db) db.collection('ordens_config').doc('provas')
+    .set({ items: d }).catch(e => console.warn('Cloud save provas:', e));
+}
+function loadClients() {
+  try { return JSON.parse(localStorage.getItem(CLI_KEY)) || []; }
+  catch { return window._memCli || []; }
+}
+function saveClients(arr) {
+  try { localStorage.setItem(CLI_KEY, JSON.stringify(arr)); }
+  catch { window._memCli = arr; }
+  if (window.db) db.collection('ordens_config').doc('clientes')
+    .set({ items: arr }).catch(e => console.warn('Cloud save clientes:', e));
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function hashId(s) {
+  let h = 0;
+  for (const c of s) h = Math.imul(31, h) + c.charCodeAt(0) | 0;
+  return Math.abs(h).toString(36);
+}
+function entryKey(provaId, ordem) { return hashId(provaId) + '_' + ordem; }
+
+// ── TABS ──────────────────────────────────────────────────────────────
+function goTab(t) {
+  ['b','i','c','e','d','f'].forEach(x => {
+    document.getElementById('tab-' + x).classList.toggle('on', x === t);
+    document.getElementById('scr-' + x).classList.toggle('on', x === t);
+  });
+  if (t === 'c') renderClientes();
+  if (t === 'e') renderEventos();
+  if (t === 'd') renderEntregas();
+  if (t === 'f') renderFinanceiroTab();
+}
+
+// ── SEARCH MODE ───────────────────────────────────────────────────────
+let modo = 'cavalo';
+
+function setModo(m) {
+  modo = m;
+  document.getElementById('btn-cav').classList.toggle('on',  m === 'cavalo');
+  document.getElementById('btn-cav2').classList.toggle('on', m === 'cavaleiro');
+  document.getElementById('sinput').placeholder =
+    m === 'cavalo' ? 'Nome do cavalo...' : 'Nome do cavaleiro...';
+  buscar();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function norm(s) {
+  return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .toUpperCase().replace(/\s+/g,' ').trim();
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function hl(txt, q) {
+  if (!q||!txt) return esc(txt||'');
+  const ni = norm(txt), nq = norm(q);
+  const i = ni.indexOf(nq);
+  if (i < 0) return esc(txt);
+  return esc(txt.slice(0,i)) + '<mark>' + esc(txt.slice(i,i+q.length)) + '</mark>' + esc(txt.slice(i+q.length));
+}
+
+function parseLines(str) {
+  return [...new Set(
+    String(str||'').split(/[\n,]/)
+      .map(s => s.trim())
+      .filter(s => s.length >= 2)
+  )];
+}
+
+// Nome match parcial (mín. 3 chars)
+function nameMatch(a, b) {
+  const na = norm(a), nb = norm(b);
+  if (na.length < 3 || nb.length < 3) return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
+// ── MATCH CLIENTE CONTRA LISTA DE PROVAS ─────────────────────────────
+function matchClientEntries(client, provasList) {
+  const normCavalos    = (client.cavalos    || []).map(norm).filter(n => n.length >= 2);
+  const normCavaleiros = (client.cavaleiros || []).map(norm).filter(n => n.length >= 2);
+  const found = [];
+
+  for (const p of provasList) {
+    for (const e of p.entradas) {
+      const nCav   = norm(e.cavalo);
+      const nRider = norm(e.cavaleiro);
+
+      const matchedCavalo = normCavalos.find(nc =>
+        nc.length >= 3 && (nCav.includes(nc) || nc.includes(nCav)));
+
+      const matchedCavaleiro = normCavaleiros.find(nr =>
+        nr.length >= 3 && (nRider.includes(nr) || nr.includes(nRider)));
+
+      if (matchedCavalo || matchedCavaleiro) {
+        found.push({ prova: p, e, matchedCavalo: matchedCavalo||null, matchedCavaleiro: matchedCavaleiro||null });
+      }
+    }
+  }
+  return found;
+}
+
+// Todos os clientes vs lista de provas (para resumo pós-import)
+function matchAllClients(provasList) {
+  return loadClients().map(c => {
+    const entries = matchClientEntries(c, provasList);
+    return entries.length ? { client: c, entries } : null;
+  }).filter(Boolean);
+}
+
+// ── BUSCAR ────────────────────────────────────────────────────────────
+function buscar() {
+  const q     = document.getElementById('sinput').value.trim();
+  const resEl = document.getElementById('results');
+  const lblEl = document.getElementById('rlbl');
+
+  if (q.length < 2) { resEl.innerHTML=''; lblEl.textContent=''; return; }
+
+  const nq    = norm(q);
+  const dados = load();
+  const hits  = [];
+
+  dados.forEach(prova => {
+    prova.entradas.forEach(e => {
+      const f = modo === 'cavalo' ? e.cavalo : e.cavaleiro;
+      if (norm(f).includes(nq)) hits.push({ prova, e });
+    });
+  });
+
+  lblEl.textContent = hits.length === 0
+    ? 'Nenhum resultado'
+    : hits.length + (hits.length === 1 ? ' resultado' : ' resultados');
+
+  if (hits.length === 0) {
+    resEl.innerHTML = `<div class="empty">
+      <div class="eico">🔍</div>
+      <div class="etit">Não encontrado</div>
+      <div class="esub">Verifique o nome ou importe mais provas</div>
+    </div>`;
+    return;
+  }
+
+  const clients = loadClients();
+
+  resEl.innerHTML = hits.map(({ prova, e }) => {
+    const isCav  = modo === 'cavalo';
+    const main   = isCav ? e.cavalo : e.cavaleiro;
+    const sec    = isCav ? e.cavaleiro : e.cavalo;
+    const secLbl = isCav ? '👤' : '🐎';
+    const ps     = (prova.prova||'').replace(/\s*[-–]\s*(NORMAL|ESPECIAL|HC\/|CTR\b|COM TEMPO).*/i,'').trim();
+
+    // Verifica se algum cliente tem interesse nesse resultado
+    const matchedCli = clients.filter(c => {
+      if (isCav) return (c.cavalos||[]).some(cav => nameMatch(cav, e.cavalo));
+      else       return (c.cavaleiros||[]).some(rid => nameMatch(rid, e.cavaleiro));
+    });
+
+    const cliBadge = matchedCli.length
+      ? `<div class="cli-badge">📱 Cliente${matchedCli.length>1?'s':''}: ${matchedCli.map(c=>esc(c.nome)).join(', ')}</div>`
+      : '';
+
+    return `<div class="card">
+      ${cliBadge}
+      <div class="cmain">${isCav?'🐎':'👤'} ${hl(main, q)}</div>
+      <div class="csec">${secLbl} ${esc(sec)}</div>
+      <div class="divl"></div>
+      <div class="cmeta">
+        ${ps ? `<b>Prova:</b> ${esc(ps)}<br>` : ''}
+        ${prova.pista ? `<b>Pista:</b> ${esc(prova.pista)}<br>` : ''}
+        ${prova.evento ? `<b>Evento:</b> ${esc(prova.evento)}` : ''}
+        ${prova.dataHora ? ` &nbsp;·&nbsp; ${esc(prova.dataHora)}` : ''}<br>
+        <b>Ordem:</b> ${e.ordem}° &nbsp;<span class="badge">${esc(e.categoria)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── FETCH HTML ────────────────────────────────────────────────────────
+async function fetchHtml(url) {
+  // Tenta /proxy primeiro: funciona em localhost:3131 (server.js) E no Netlify (função serverless)
+  if (!IS_FILE) {
+    try {
+      const r = await fetch(`/proxy?url=${encodeURIComponent(url)}`,
+        { signal: AbortSignal.timeout(20000) });
+      if (r.ok) return await r.text();
+    } catch(_) { /* cai para proxies externos */ }
+  }
+
+  // Fallback: proxies externos (file:// ou quando /proxy falha)
+  const proxies = [
+    {
+      name: 'AllOrigins',
+      fn: async () => {
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+          { signal: AbortSignal.timeout(20000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        if (!j.contents) throw new Error('resposta vazia');
+        return j.contents;
+      }
+    },
+    {
+      name: 'CorsProxy.io',
+      fn: async () => {
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`,
+          { signal: AbortSignal.timeout(20000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      }
+    },
+    {
+      name: 'CodeTabs',
+      fn: async () => {
+        const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+          { signal: AbortSignal.timeout(20000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      }
+    },
+  ];
+
+  const erros = [];
+  for (const p of proxies) {
+    try { return await p.fn(); }
+    catch(e) { erros.push(`${p.name}: ${e.message}`); }
+  }
+
+  throw new Error(
+    'Todos os proxies falharam:\n' + erros.join('\n') +
+    '\n\nTente novamente em alguns segundos ou use o iniciar.bat localmente.'
+  );
+}
+
+// ── PARSE ─────────────────────────────────────────────────────────────
+function parseHtml(html, url) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return _parseCommon(doc.body.textContent || '', url, doc);
+}
+
+function parseTxt(text, url) {
+  return _parseCommon(text, url, null);
+}
+
+function _parseCommon(bodyTxt, url, doc) {
+  const headerRaw = bodyTxt.split(/ORDEM\s+DE\s+ENTRADA/i)[0] || bodyTxt;
+  const hLines = headerRaw.split('\n')
+    .map(l => l.replace(/\t/g,' ').trim())
+    .filter(l => l.length > 3 && !l.match(/^\/\/|Link Copiado|^OR\.|^COMPETIDOR|^INSTRUTOR|^NASC\./i));
+
+  let evento='', datas='', prova='', pista='', dataHora='';
+  for (const l of hLines) {
+    if (!evento && l.match(/ETAPA|COPA|CAMPEONATO|CSN\s*\d|HÍPICO|HIPICO/i) && !l.match(/^PR\./i)) { evento = l; }
+    else if (!datas && l.match(/^De\s+\d|de\s+\d+\s+a\s+\d+/i)) { datas = l; }
+    else if (!prova && l.match(/^PR\.?\s*\d+/i)) {
+      prova = l;
+      const pm = l.match(/PISTA\s*[-–]\s*(.+)/i);
+      if (pm) pista = pm[1].trim();
+      const dm = l.match(/(\d{1,2}h\d{2})\s*[-–]\s*(\d{2}\/\d{2}\/\d{4})/i);
+      if (dm) dataHora = `${dm[1]} - ${dm[2]}`;
+    }
+  }
+  if (!evento && hLines.length) evento = hLines[0];
+  if (prova) {
+    let p = prova;
+    if (pista)    p = p.split(/PISTA/i)[0];
+    if (dataHora) p = p.replace(dataHora,'');
+    p = p.replace(/\s*[-–]\s*(NORMAL|ESPECIAL|HC\/|CTR\b|COM TEMPO|A seguir).*/i,'')
+         .replace(/\s*[-–]+\s*$/,'').trim();
+    if (p.length > 4) prova = p;
+  }
+
+  const entradas = [];
+  if (doc) {
+    for (const row of doc.querySelectorAll('tr')) {
+      const tds = row.querySelectorAll('td');
+      if (tds.length < 3) continue;
+      const om = tds[0].textContent.trim().match(/^(\d+)\s*°/);
+      if (!om) continue;
+      const ordem = parseInt(om[1]);
+      const cavLines = tds[1].textContent.split('\n').map(l=>l.trim())
+        .filter(l=>l.length>1&&!l.match(/^INSTRUTOR$|^COMPETIDOR$/i));
+      const cavaleiro = cavLines.join(' ').replace(/\s+/g,' ').trim();
+      const hLines2 = tds[2].textContent.split('\n').map(l=>l.trim()).filter(l=>l.length>1);
+      const cavalo = hLines2[0]||'';
+      const detalhes = hLines2.slice(1).join(' ').replace(/\s+/g,' ').trim();
+      const catLines = tds[tds.length-1].textContent.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+      const categoria = catLines[0]||'-';
+      if (cavalo && cavaleiro && cavaleiro.length>2
+          && !cavaleiro.match(/^NASC|^SEXO|^COMPETIDOR/i))
+        entradas.push({ ordem, cavaleiro, cavalo, detalhes, categoria });
+    }
+  }
+  if (entradas.length === 0) {
+    const lines = bodyTxt.split('\n').map(l=>l.replace(/\t/g,' ').trim()).filter(l=>l.length>0);
+    let idx = lines.findIndex(l => l.match(/ORDEM\s+DE\s+ENTRADA/i));
+    if (idx < 0) idx = 0;
+    let i = idx + 1;
+    while (i < lines.length && !lines[i].match(/^\d+\s*°$/)) i++;
+    while (i < lines.length) {
+      const om2 = lines[i].match(/^(\d+)\s*°$/);
+      if (!om2) { i++; continue; }
+      const ordem = parseInt(om2[1]); i++;
+      while (i < lines.length && (lines[i].length===0 || lines[i].match(/^INSTRUTOR$/i))) i++;
+      const cavaleiro = lines[i]||''; i++;
+      while (i < lines.length && lines[i].length===0) i++;
+      const cavalo = lines[i]||''; i++;
+      let detalhes='';
+      if (i < lines.length && lines[i].match(/^\d{2}\/\d{2}\/\d{4}/)) { detalhes=lines[i]; i++; }
+      while (i < lines.length && lines[i].length===0) i++;
+      const categoria = (lines[i]||'-').split(/\s+/)[0]; i++;
+      while (i < lines.length && (lines[i]==='-'||lines[i].length===0)) i++;
+      if (cavalo && cavaleiro && cavaleiro.length>2
+          && !cavaleiro.match(/^OR\.|^COMPETIDOR|^NASC\./i))
+        entradas.push({ ordem, cavaleiro, cavalo, detalhes, categoria });
+    }
+  }
+  if (!prova && url) {
+    const idUrl = url.match(/[?&]ID=(\d+)/i);
+    if (idUrl) prova = `Prova #${idUrl[1]}`;
+  }
+  return { id: url||Date.now().toString(), url:url||'',
+           importadoEm: new Date().toISOString(),
+           evento, datas, prova, pista, dataHora, entradas };
+}
+
+// ── IMPORTAR AUTOMÁTICO ───────────────────────────────────────────────
+async function importarAuto() {
+  const ta   = document.getElementById('url-ta');
+  const stEl = document.getElementById('imp-st');
+  const btn  = document.getElementById('btn-imp');
+
+  const urls = ta.value.split('\n').map(u=>u.trim()).filter(u=>u.startsWith('http'));
+  if (!urls.length) {
+    stEl.innerHTML='<div class="st st-err">⚠ Cole pelo menos uma URL válida.</div>'; return;
+  }
+
+  btn.disabled=true;
+  const dados = load();
+  let ok=0, errs=[], novasList=[], msg_novas=0, msg_atualizadas=0, msg_semalt=0, msg_atualizadas_info=[];
+
+  for (let i=0; i<urls.length; i++) {
+    stEl.innerHTML=`<div class="st st-info"><span class="spinner"></span>Buscando ${i+1} de ${urls.length}…</div>`;
+    try {
+      const html  = await fetchHtml(urls[i]);
+      const prova = parseHtml(html, urls[i]);
+      if (!prova.entradas.length) { errs.push(`URL ${i+1}: nenhuma entrada encontrada`); continue; }
+      const idx = dados.findIndex(d => d.id === urls[i]);
+      if (idx >= 0) {
+        // URL já importada — só atualiza se tiver mais entradas (lista foi expandida)
+        if (prova.entradas.length > dados[idx].entradas.length) {
+          msg_atualizadas_info.push(`${dados[idx].entradas.length}→${prova.entradas.length}`);
+          dados[idx] = prova;
+          novasList.push(prova);
+          msg_atualizadas++;
+        } else {
+          msg_semalt++;
+        }
+      } else {
+        dados.push(prova);
+        novasList.push(prova);
+        msg_novas++;
+      }
+      ok++;
+    } catch(e) { errs.push(`URL ${i+1}: ${e.message}`); }
+  }
+
+  save(dados);
+  btn.disabled=false;
+
+  if (errs.length && !ok) {
+    // Só erros, nenhuma prova importada
+    stEl.innerHTML=`<div class="st st-err">⚠ ${errs.length} erro(s):<br>
+      <small style="white-space:pre-wrap">${errs.map(e=>esc(e.slice(0,300))).join('\n\n')}</small></div>`;
+    return;
+  }
+
+  if (ok) {
+    ta.value='';
+    const matches = matchAllClients(novasList);
+    const nMatch  = matches.length;
+
+    // Feedback rápido na aba Importar
+    const partes = [];
+    if (msg_novas)       partes.push(`${msg_novas} nova(s)`);
+    if (msg_atualizadas) partes.push(`${msg_atualizadas} atualizada(s) [${msg_atualizadas_info.join(', ')} atletas]`);
+    if (msg_semalt)      partes.push(`${msg_semalt} sem alteração`);
+    if (nMatch)          partes.push(`<b>${nMatch} cliente(s) encontrado(s)</b>`);
+    let html = `<div class="st st-ok">✓ ${partes.join(' &nbsp;·&nbsp; ')}</div>`;
+    if (errs.length) html += `<div class="st st-err" style="margin-top:8px">⚠ ${errs.length} erro(s):<br>
+      <small style="white-space:pre-wrap">${errs.map(e=>esc(e.slice(0,300))).join('\n\n')}</small></div>`;
+    stEl.innerHTML = html;
+
+    // Adiciona pedidos novos para clientes que fazem match
+    adicionarPedidosNovos(novasList);
+
+    // Vai automaticamente para Clientes após 1s
+    setTimeout(() => {
+      window._lastImportHighlight = novasList.map(p => p.id);
+      goTab('c');
+      // scroll ao topo da aba
+      const scr = document.getElementById('scr-c');
+      if (scr) scr.scrollTop = 0;
+    }, 900);
+  }
+}
+
+function buildMatchSummary(matches) {
+  const items = matches.map(m => {
+    const provas = m.entries.map(({prova, e}) => {
+      const ps = (prova.prova||'?').replace(/\s*[-–].*/,'').trim();
+      return `<span class="badge">${esc(ps)} · ${e.ordem}°</span>`;
+    }).join(' ');
+    const foneNum = (m.client.fone||'').replace(/\D/g,'');
+    const waUrl = foneNum.length >= 8 ? `https://wa.me/55${foneNum}` : '';
+    return `<div class="match-cli">
+      <div class="match-cli-name">👤 ${esc(m.client.nome)}</div>
+      <div class="match-provas">${provas}</div>
+      ${waUrl ? `<a class="wa-link" href="${waUrl}" target="_blank">💬 WhatsApp</a>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="match-box" style="margin-top:10px">
+    <div class="match-hdr">📱 ${matches.length} cliente(s) encontrado(s)</div>
+    ${items}
+  </div>`;
+}
+
+// ── IMPORTAR MANUAL ───────────────────────────────────────────────────
+function toggleManual() {
+  const body = document.getElementById('manual-body');
+  const arrow = document.getElementById('arrow-m');
+  const open = body.classList.toggle('open');
+  arrow.textContent = open ? '▲' : '▼';
+}
+
+async function importarManual() {
+  const txt  = document.getElementById('manual-txt').value.trim();
+  const url  = document.getElementById('manual-url').value.trim();
+  const stEl = document.getElementById('manual-st');
+
+  if (!txt || txt.length < 50) {
+    stEl.innerHTML='<div class="st st-err">⚠ Cole o conteúdo da página primeiro.</div>'; return;
+  }
+
+  const prova = parseTxt(txt, url||null);
+  if (!prova.entradas.length) {
+    stEl.innerHTML='<div class="st st-err">⚠ Não foi possível encontrar entradas no texto.</div>'; return;
+  }
+
+  const dados = load();
+  const id = url || ('manual_' + Date.now());
+  prova.id = id;
+  const idx = dados.findIndex(d=>d.id===id);
+  if (idx>=0) dados[idx]=prova; else dados.push(prova);
+  save(dados);
+
+  let html = `<div class="st st-ok">✓ ${prova.entradas.length} entradas importadas!<br>
+    <small>${esc(prova.prova||'—')} · ${esc(prova.pista||'—')}</small></div>`;
+  const matches = matchAllClients([prova]);
+  if (matches.length) html += buildMatchSummary(matches);
+
+  adicionarPedidosNovos([prova]);
+  stEl.innerHTML=html;
+  document.getElementById('manual-txt').value='';
+  document.getElementById('manual-url').value='';
+  buscar();
+}
+
+// ── BUSCA ENTRADAS (formulário de cadastro) ───────────────────────────
+let _formPedidos = []; // entradas selecionadas no formulário
+
+function buscarEntradasForm(query) {
+  const dropEl = document.getElementById('cli-busca-drop');
+  if (!dropEl) return;
+  const q = norm(query);
+  if (q.length < 2) { dropEl.style.display = 'none'; return; }
+
+  const provas = load();
+  const results = [];
+  for (const p of provas) {
+    for (const e of p.entradas) {
+      if (norm(e.cavalo).includes(q) || norm(e.cavaleiro).includes(q)) {
+        const ja = _formPedidos.some(fp => fp.prova_id === p.id && fp.ordem === e.ordem);
+        if (!ja) results.push({ prova: p, e });
+        if (results.length >= 20) break;
+      }
+    }
+    if (results.length >= 20) break;
+  }
+
+  const manualFooterForm = `<div class="busca-manual-link"
+    onmousedown="event.preventDefault();mostrarFormManualForm()">
+    ➕ Não encontrou? Adicionar manualmente
+  </div>`;
+
+  dropEl.style.display = 'block';
+  if (!results.length) {
+    dropEl.innerHTML = `<div class="busca-item" style="color:var(--gray);font-size:12px;font-style:italic">Nenhuma entrada encontrada</div>` + manualFooterForm;
+    return;
+  }
+  dropEl.innerHTML = results.map(({prova, e}) => {
+    const pnm = (prova.prova||prova.evento||'?').replace(/\s*[-–].*/,'').trim();
+    return `<div class="busca-item">
+      <div class="busca-item-ord">${e.ordem}°</div>
+      <div class="busca-item-info">
+        <div class="busca-item-cav">${esc(e.cavalo)}</div>
+        <div class="busca-item-sub">${esc(e.cavaleiro)} · ${esc(pnm)}</div>
+      </div>
+      <button class="busca-item-add" onmousedown="event.preventDefault();addPedidoForm('${encodeURIComponent(prova.id)}',${e.ordem})">+ Add</button>
+    </div>`;
+  }).join('') + manualFooterForm;
+}
+
+function mostrarFormManualForm() {
+  const dropEl = document.getElementById('cli-busca-drop');
+  if (!dropEl) return;
+  dropEl.style.display = 'block';
+  dropEl.innerHTML = `<div class="manual-form">
+    <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:4px">ADICIONAR MANUALMENTE</div>
+    <div class="manual-form-row">
+      <input class="manual-inp" id="man-form-cav" placeholder="Cavalo *" autocomplete="off">
+      <input class="manual-inp" id="man-form-rid" placeholder="Cavaleiro" autocomplete="off">
+    </div>
+    <input class="manual-inp" id="man-form-obs" placeholder="Observação (ex: CSN5* Maio — Pista 2)" autocomplete="off">
+    <div class="manual-form-row">
+      <button class="manual-btn" onmousedown="event.preventDefault();addPedidoFormManual()">+ Adicionar</button>
+      <button class="manual-btn" style="background:transparent;border-color:var(--dim);color:var(--gray)"
+        onmousedown="event.preventDefault();document.getElementById('cli-busca-drop').style.display='none'">Cancelar</button>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById('man-form-cav')?.focus(), 50);
+}
+
+function addPedidoFormManual() {
+  const cavalo    = (document.getElementById('man-form-cav')?.value || '').trim();
+  const cavaleiro = (document.getElementById('man-form-rid')?.value || '').trim();
+  const obs       = (document.getElementById('man-form-obs')?.value || '').trim();
+  if (!cavalo && !cavaleiro) { alert('Informe pelo menos o cavalo ou o cavaleiro.'); return; }
+  _formPedidos.push({
+    prova_id:    'manual_' + uid(),
+    prova_nome:  obs || 'Entrada manual',
+    prova_pista: '',
+    ordem:       0,
+    cavaleiro:   cavaleiro || '—',
+    cavalo:      cavalo || '—',
+    manual:      true
+  });
+  renderPedidosForm();
+  document.getElementById('cli-busca-drop').style.display = 'none';
+  const inp = document.getElementById('cli-busca');
+  if (inp) inp.value = '';
+}
+
+function addPedidoForm(encProvaId, ordem) {
+  const provaId = decodeURIComponent(encProvaId);
+  const prova = load().find(p => p.id === provaId);
+  if (!prova) return;
+  const e = prova.entradas.find(e => e.ordem === ordem);
+  if (!e) return;
+  if (_formPedidos.some(fp => fp.prova_id === provaId && fp.ordem === ordem)) return;
+  _formPedidos.push({
+    prova_id:    provaId,
+    prova_nome:  (prova.prova||prova.evento||'').replace(/\s*[-–].*/,'').trim() || '?',
+    prova_pista: prova.pista || '',
+    ordem: e.ordem, cavaleiro: e.cavaleiro, cavalo: e.cavalo,
+  });
+  renderPedidosForm();
+  const inp = document.getElementById('cli-busca');
+  if (inp) inp.value = '';
+  document.getElementById('cli-busca-drop').style.display = 'none';
+}
+
+function removePedidoForm(idx) {
+  _formPedidos.splice(idx, 1);
+  renderPedidosForm();
+}
+
+function renderPedidosForm() {
+  const el = document.getElementById('cli-pedidos-form');
+  if (!el) return;
+  el.innerHTML = _formPedidos.map((p, i) => `
+    <div class="form-ped-row">
+      <div class="form-ped-ord">${p.ordem}°</div>
+      <div class="form-ped-info">
+        <div class="form-ped-cav">🐎 ${esc(p.cavalo)}</div>
+        <div class="form-ped-sub">👤 ${esc(p.cavaleiro)} · ${esc(p.prova_nome)}</div>
+      </div>
+      <button class="form-ped-rm" onclick="removePedidoForm(${i})">✕</button>
+    </div>`).join('');
+}
+
+// ── CLIENTES ──────────────────────────────────────────────────────────
+function adicionarCliente() {
+  const nome       = document.getElementById('cli-nome').value.trim();
+  const cavalos    = parseLines(document.getElementById('cli-cavalos').value);
+  const cavaleiros = parseLines(document.getElementById('cli-cavaleiros').value);
+  const fone        = document.getElementById('cli-fone').value.trim();
+  const obs         = document.getElementById('cli-obs').value.trim();
+  const pagamento   = document.getElementById('cli-pag').value || 'pendente';
+  const val_cobrado = document.getElementById('cli-val-cobrado').value.trim();
+  const val_pago    = document.getElementById('cli-val-pago').value.trim();
+  const qtd_pacote  = parseInt(document.getElementById('cli-qtd-pacote').value) || 0;
+  const preco_video = parseFloat(document.getElementById('cli-preco-video').value) || 0;
+
+  if (!nome) { alert('Digite o nome do cliente.'); return; }
+
+  // Pedidos já selecionados via busca
+  const pedidosIniciais = _formPedidos.map(fp => ({
+    id: uid(), ...fp, status: 'pendente'
+  }));
+
+  const clients = loadClients();
+  clients.push({ id: uid(), nome, cavalos, cavaleiros, fone, obs, pagamento,
+    val_cobrado, val_pago, qtd_pacote, preco_video, pedidos: pedidosIniciais });
+  saveClients(clients);
+
+  // Adiciona pedidos via matching automático se configurado
+  if (cavalos.length || cavaleiros.length) adicionarPedidosNovos(load());
+
+  ['cli-nome','cli-cavalos','cli-cavaleiros','cli-fone','cli-obs',
+   'cli-qtd-pacote','cli-preco-video','cli-val-cobrado','cli-val-pago','cli-busca']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('cli-pag').value = 'pendente';
+  document.getElementById('form-val-pago').style.display = 'none';
+  _formPedidos = [];
+  renderPedidosForm();
+
+  renderClientes();
+}
+
+function deletarCliente(id) {
+  if (!confirm('Remover este cliente?')) return;
+  saveClients(loadClients().filter(c => c.id !== id));
+  renderClientes();
+}
+
+// ── FINANCEIRO ────────────────────────────────────────────────────────
+function parseMoeda(s) {
+  const n = parseFloat(String(s||'').replace(/[^\d,.]/g,'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+function fmtMoeda(v) {
+  return 'R$ ' + v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+function renderFinanceiro() {
+  const clients = loadClients();
+  let faturado = 0, recebido = 0;
+  for (const c of clients) {
+    const cobrado = parseMoeda(c.val_cobrado);
+    faturado += cobrado;
+    if (c.pagamento === 'pago')         recebido += cobrado;
+    else if (c.pagamento === 'parcial') recebido += parseMoeda(c.val_pago);
+  }
+  const aReceber = Math.max(0, faturado - recebido);
+  const el = document.getElementById('fin-summary');
+  if (!el) return;
+  if (!faturado && !recebido) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="fin-card">
+    <div class="fin-item">
+      <div class="fin-lbl">FATURADO</div>
+      <div class="fin-val fin-val-gold">${fmtMoeda(faturado)}</div>
+    </div>
+    <div class="fin-item">
+      <div class="fin-lbl">RECEBIDO</div>
+      <div class="fin-val fin-val-green">${fmtMoeda(recebido)}</div>
+    </div>
+    <div class="fin-item">
+      <div class="fin-lbl">A RECEBER</div>
+      <div class="fin-val fin-val-red">${fmtMoeda(aReceber)}</div>
+    </div>
+  </div>`;
+}
+
+// ── EDITAR CLIENTE ────────────────────────────────────────────────────
+function toggleEditCliente(id) {
+  const el = document.getElementById('edit-' + id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function salvarEdicaoCliente(id) {
+  const clients = loadClients();
+  const c = clients.find(c => c.id === id);
+  if (!c) return;
+  const nome = document.getElementById('ename-' + id)?.value.trim();
+  if (!nome) { alert('O nome não pode ficar vazio.'); return; }
+  c.nome       = nome;
+  c.fone       = document.getElementById('efone-' + id)?.value.trim() || '';
+  c.cavalos    = parseLines(document.getElementById('ecavs-' + id)?.value || '');
+  c.cavaleiros = parseLines(document.getElementById('erids-' + id)?.value || '');
+  saveClients(clients);
+  renderClientes();
+}
+
+// Retorna o nome correto da prova para um pedido, sempre preferindo dados[] sobre prova_nome salvo
+function resolveProvaNome(p, dados) {
+  const d = dados.find(d => d.id === p.prova_id);
+  if (d) {
+    const nm = (d.prova || '').replace(/\s*[-–].*/,'').trim();
+    if (nm) return nm;
+    const idUrl = d.url && d.url.match(/[?&]ID=(\d+)/i);
+    if (idUrl) return `Prova #${idUrl[1]}`;
+  }
+  const saved = p.prova_nome || '';
+  if (saved && saved !== '?' && (!d || saved !== d.evento)) return saved;
+  return p.manual ? 'Manual' : 'Entrada';
+}
+
+function renderFinanceiroTab() {
+  const el = document.getElementById('fin-det');
+  if (!el) return;
+  const clients = loadClients();
+  const dados   = load();
+
+  if (!clients.length) {
+    el.innerHTML = '<div class="fin-empty">Nenhum cliente cadastrado ainda.</div>'; return;
+  }
+
+  // ── mapa provaId → evento ──
+  const provaEvt = {};
+  for (const d of dados) provaEvt[d.id] = d.evento || 'Sem evento';
+
+  // ── métricas de um cliente ──
+  function stats(c) {
+    const cobrado = parseMoeda(c.val_cobrado);
+    const pago    = c.pagamento === 'pago'    ? cobrado
+                  : c.pagamento === 'parcial' ? parseMoeda(c.val_pago)
+                  : 0;
+    const deve    = Math.max(0, cobrado - pago);
+    const peds    = c.pedidos || [];
+    const nEnv    = peds.filter(p => p.status === 'enviado').length;
+    const nPend   = peds.filter(p => p.status === 'pendente').length;
+    const qtdPac  = parseInt(c.qtd_pacote) || 0;
+    const foneNum = (c.fone || '').replace(/\D/g, '');
+    const waUrl   = foneNum.length >= 8 ? `https://wa.me/55${foneNum}` : '';
+    return { cobrado, pago, deve, nEnv, nPend, qtdPac, waUrl };
+  }
+
+  // ── agrupar clientes por evento ──
+  const byEvento = {};   // { eventoNome: Set<clienteId> }
+  const idxClient = {};  // { clienteId: objeto cliente }
+  for (const c of clients) {
+    idxClient[c.id] = c;
+    const evts = new Set();
+    for (const p of (c.pedidos || [])) {
+      const ev = provaEvt[p.prova_id];
+      if (ev) evts.add(ev);
+    }
+    if (evts.size === 0) {
+      if (!byEvento['__sem__']) byEvento['__sem__'] = new Set();
+      byEvento['__sem__'].add(c.id);
+    } else {
+      for (const ev of evts) {
+        if (!byEvento[ev]) byEvento[ev] = new Set();
+        byEvento[ev].add(c.id);
+      }
+    }
+  }
+
+  // ── totais globais ──
+  let gtFat = 0, gtRec = 0, gtEnv = 0, gtPend = 0;
+  for (const c of clients) {
+    const s = stats(c);
+    gtFat  += s.cobrado; gtRec  += s.pago;
+    gtEnv  += s.nEnv;    gtPend += s.nPend;
+  }
+
+  // ── card de cliente ──
+  function cliCard(c) {
+    const s   = stats(c);
+    const pag = c.pagamento || 'pendente';
+    const pagMap = {
+      pendente: { cls:'pag-pend', txt:'🔴 Não pago' },
+      parcial:  { cls:'pag-parc', txt:'🟡 Parcial'  },
+      pago:     { cls:'pag-ok',   txt:'🟢 Pago'     },
+    };
+    const { cls, txt } = pagMap[pag] || pagMap.pendente;
+
+    const saldoHtml = s.deve > 0
+      ? `<div class="fin-v-num red">${fmtMoeda(s.deve)}</div>`
+      : `<div class="fin-v-num green">Quitado ✓</div>`;
+
+    const pct  = s.qtdPac > 0 ? Math.min(100, Math.round(s.nEnv / s.qtdPac * 100)) : 0;
+    const barColor = pct === 100 ? 'var(--green)' : 'var(--gold)';
+    const pacBar = s.qtdPac > 0 ? `
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div class="fin-vid-bar" style="flex:1">
+          <div class="fin-vid-fill" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div style="font-size:10px;color:var(--gray);flex-shrink:0">${s.nEnv}/${s.qtdPac}</div>
+      </div>` : '';
+
+    const vidTxt = (s.nEnv + s.nPend) > 0
+      ? `${s.nEnv} enviado(s)${s.nPend > 0
+          ? ` · <span style="color:#E05252">${s.nPend} pendente(s)</span>`
+          : ' · <span style="color:var(--green)">✅ tudo enviado</span>'}`
+      : `<span style="color:rgba(255,255,255,.25)">Sem vídeos vinculados</span>`;
+
+    return `<div class="fin-cli-card">
+      <div class="fin-cc-top">
+        <div class="fin-cc-nm">👤 ${esc(c.nome)}</div>
+        ${s.waUrl ? `<a href="${s.waUrl}" target="_blank" class="fin-wa-ico">💬</a>` : ''}
+        <button class="pag-btn ${cls}" onclick="togglePagamento('${c.id}');setTimeout(renderFinanceiroTab,80)">${txt}</button>
+      </div>
+      <div class="fin-cc-vals">
+        <div class="fin-v">
+          <div class="fin-v-lbl">COBRADO</div>
+          <div class="fin-v-num gold">${s.cobrado > 0 ? fmtMoeda(s.cobrado) : '—'}</div>
+        </div>
+        ${s.pago > 0 && pag !== 'pago' ? `<div class="fin-v">
+          <div class="fin-v-lbl">PAGO</div>
+          <div class="fin-v-num" style="color:var(--green)">${fmtMoeda(s.pago)}</div>
+        </div>` : ''}
+        <div class="fin-v">
+          <div class="fin-v-lbl">SALDO</div>
+          ${saldoHtml}
+        </div>
+      </div>
+      <div class="fin-vid-row">${vidTxt}</div>
+      ${pacBar}
+    </div>`;
+  }
+
+  // ── seção de evento ──
+  function evSection(evNm, idSet) {
+    const clis = [...idSet].map(id => idxClient[id]).filter(Boolean);
+    // ordenar: mais devendo primeiro, depois mais vídeo pendente, pagos por último
+    clis.sort((a, b) => {
+      const sa = stats(a), sb = stats(b);
+      const orA = a.pagamento==='pago' ? 2 : a.pagamento==='parcial' ? 1 : 0;
+      const orB = b.pagamento==='pago' ? 2 : b.pagamento==='parcial' ? 1 : 0;
+      if (orA !== orB) return orA - orB;
+      if (sb.deve !== sa.deve) return sb.deve - sa.deve;
+      return sb.nPend - sa.nPend;
+    });
+
+    let evFat = 0, evRec = 0, evPend = 0;
+    for (const c of clis) {
+      const s = stats(c); evFat += s.cobrado; evRec += s.pago; evPend += s.nPend;
+    }
+    const evDeve = Math.max(0, evFat - evRec);
+    const label  = evNm === '__sem__' ? '📋 Sem evento vinculado' : `🏆 ${esc(evNm)}`;
+
+    return `<div class="fin-evt-grp">
+      <div class="fin-evt-hdr">
+        <div class="fin-evt-nm">${label}</div>
+        <div class="fin-evt-pills">
+          <span class="fin-pill fin-pill-gray">${clis.length} cliente(s)</span>
+          <span class="fin-pill fin-pill-gold">${fmtMoeda(evFat)}</span>
+          ${evDeve > 0
+            ? `<span class="fin-pill fin-pill-red">Deve ${fmtMoeda(evDeve)}</span>`
+            : `<span class="fin-pill fin-pill-green">✓ Quitado</span>`}
+          ${evPend > 0
+            ? `<span class="fin-pill fin-pill-blue">${evPend} vídeo(s) a enviar</span>`
+            : ''}
+        </div>
+      </div>
+      ${clis.map(cliCard).join('')}
+    </div>`;
+  }
+
+  // Ordenar eventos: reais primeiro (alfabético), __sem__ por último
+  const evKeys = Object.keys(byEvento).sort((a, b) => {
+    if (a === '__sem__') return 1;
+    if (b === '__sem__') return -1;
+    return a.localeCompare(b, 'pt-BR');
+  });
+
+  el.innerHTML = `
+    <div class="fin-global-bar">
+      <div class="fin-gb-item">
+        <div class="fin-gb-lbl">FATURADO</div>
+        <div class="fin-gb-val gold">${fmtMoeda(gtFat)}</div>
+      </div>
+      <div class="fin-gb-item">
+        <div class="fin-gb-lbl">RECEBIDO</div>
+        <div class="fin-gb-val green">${fmtMoeda(gtRec)}</div>
+      </div>
+      <div class="fin-gb-item">
+        <div class="fin-gb-lbl">A RECEBER</div>
+        <div class="fin-gb-val ${(gtFat-gtRec)>0?'red':'green'}">${fmtMoeda(Math.max(0,gtFat-gtRec))}</div>
+      </div>
+      <div class="fin-gb-item">
+        <div class="fin-gb-lbl">VÍDEOS</div>
+        <div class="fin-gb-val" style="font-size:12px;line-height:1.4">
+          <span style="color:var(--green)">${gtEnv}✓</span>&nbsp;<span style="color:#E05252">${gtPend}⏳</span>
+        </div>
+      </div>
+    </div>
+    ${evKeys.map(k => evSection(k, byEvento[k])).join('')}`;
+}
+
+function toggleValPagoForm() {
+  const pag = document.getElementById('cli-pag').value;
+  document.getElementById('form-val-pago').style.display = pag === 'parcial' ? 'block' : 'none';
+}
+
+function salvarCampo(clientId, campo, valor) {
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  c[campo] = valor;
+  saveClients(clients);
+}
+
+function togglePagamento(clientId) {
+  const estados = ['pendente', 'parcial', 'pago'];
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  const cur = c.pagamento || 'pendente';
+  c.pagamento = estados[(estados.indexOf(cur) + 1) % estados.length];
+  saveClients(clients);
+  renderClientes();
+}
+
+function pagBadge(c) {
+  const p = c.pagamento || 'pendente';
+  const map = {
+    pendente: { cls: 'pag-pend', txt: '🔴 Não pago' },
+    parcial:  { cls: 'pag-parc', txt: '🟡 Pago parcial' },
+    pago:     { cls: 'pag-ok',   txt: '🟢 Pago' },
+  };
+  const { cls, txt } = map[p] || map.pendente;
+  return `<button class="pag-btn ${cls}" onclick="togglePagamento('${c.id}')">${txt}</button>`;
+}
+
+// ── SISTEMA DE PEDIDOS ───────────────────────────────────────────────
+
+// Migra clientes antigos (entregues[]) para o novo modelo (pedidos[])
+function migrarClientes() {
+  const clients = loadClients();
+  const provas  = load();
+  let changed   = false;
+  for (const c of clients) {
+    // Migração 1: antigo sistema com entregues[]
+    if (c.pedidos === undefined) {
+      changed = true;
+      const entries   = matchClientEntries(c, provas);
+      const entregues = c.entregues || [];
+      c.pedidos = entries.map(({prova, e}) => ({
+        id: uid(),
+        prova_id:    prova.id,
+        prova_nome:  (prova.prova || prova.evento || '').replace(/\s*[-–].*/,'').trim() || '?',
+        prova_pista: prova.pista || '',
+        ordem:      e.ordem,
+        cavaleiro:  e.cavaleiro,
+        cavalo:     e.cavalo,
+        status: entregues.includes(entryKey(prova.id, e.ordem)) ? 'enviado' : 'pendente'
+      }));
+      delete c.entregues;
+    }
+    // Migração 2: status antigos → pendente/enviado
+    for (const p of (c.pedidos || [])) {
+      if (p.status === 'aguardando' || p.status === 'confirmado') {
+        p.status = 'pendente'; changed = true;
+      } else if (p.status === 'entregue') {
+        p.status = 'enviado'; changed = true;
+      }
+    }
+    // Remove descartados
+    const before = (c.pedidos||[]).length;
+    c.pedidos = (c.pedidos||[]).filter(p => p.status !== 'descartado');
+    if (c.pedidos.length !== before) changed = true;
+    // Migração 3: prova_nome '?' → resolver pelo prova_id nas provas importadas
+    for (const p of (c.pedidos || [])) {
+      if (!p.prova_nome || p.prova_nome === '?') {
+        const d = provas.find(d => d.id === p.prova_id);
+        if (d) {
+          const nm = (d.prova || d.evento || '').replace(/\s*[-–].*/,'').trim();
+          if (nm) { p.prova_nome = nm; changed = true; }
+        }
+      }
+    }
+  }
+  if (changed) saveClients(clients);
+}
+
+// Adiciona pedidos novos a todos os clientes quando provas são importadas
+function adicionarPedidosNovos(novasProvas) {
+  if (!novasProvas || !novasProvas.length) return false;
+  const clients = loadClients();
+  let changed   = false;
+  for (const c of clients) {
+    if (!c.pedidos) c.pedidos = [];
+    const entries = matchClientEntries(c, novasProvas);
+    for (const {prova, e} of entries) {
+      const exists = c.pedidos.some(p => p.prova_id === prova.id && p.ordem === e.ordem);
+      if (!exists) {
+        c.pedidos.push({
+          id: uid(),
+          prova_id:    prova.id,
+          prova_nome:  (prova.prova || prova.evento || '').replace(/\s*[-–].*/,'').trim() || '?',
+          prova_pista: prova.pista || '',
+          ordem:       e.ordem,
+          cavaleiro:   e.cavaleiro,
+          cavalo:      e.cavalo,
+          status:      'pendente'
+        });
+        changed = true;
+      }
+    }
+  }
+  if (changed) saveClients(clients);
+  return changed;
+}
+
+function setStatusPedido(clientId, pedidoId, novoStatus) {
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  const p = (c.pedidos || []).find(p => p.id === pedidoId);
+  if (!p) return;
+  p.status = novoStatus;
+  saveClients(clients);
+  const tab = ['b','i','c','e','d'].find(t =>
+    document.getElementById('tab-'+t)?.classList.contains('on')) || 'c';
+  if (tab === 'c') renderClientes();
+  else if (tab === 'e') renderEventos();
+  else if (tab === 'd') renderEntregas();
+}
+
+function marcarTodosEnviados(clientId) {
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  (c.pedidos || []).filter(p => p.status === 'pendente').forEach(p => p.status = 'enviado');
+  saveClients(clients);
+  renderEntregas();
+  renderClientes();
+}
+
+function deletarPedido(clientId, pedidoId) {
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  c.pedidos = (c.pedidos || []).filter(p => p.id !== pedidoId);
+  saveClients(clients);
+  renderClientes();
+}
+
+function buscarEntradasCard(clientId, query, dropId) {
+  const dropEl = document.getElementById(dropId);
+  if (!dropEl) return;
+  const q = norm(query);
+  if (q.length < 2) { dropEl.style.display = 'none'; return; }
+
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  const provas  = load();
+  const results = [];
+  for (const p of provas) {
+    for (const e of p.entradas) {
+      if (norm(e.cavalo).includes(q) || norm(e.cavaleiro).includes(q)) {
+        const ja = (c?.pedidos||[]).some(fp => fp.prova_id === p.id && fp.ordem === e.ordem);
+        if (!ja) results.push({ prova: p, e });
+        if (results.length >= 15) break;
+      }
+    }
+    if (results.length >= 15) break;
+  }
+
+  dropEl.style.display = 'block';
+  const manualFooter = `<div class="busca-manual-link"
+    onmousedown="event.preventDefault();mostrarFormManual('${clientId}','${dropId}')">
+    ➕ Não encontrou? Adicionar manualmente
+  </div>`;
+
+  if (!results.length) {
+    dropEl.innerHTML = `<div class="busca-item" style="color:var(--gray);font-size:12px;font-style:italic">Nenhuma entrada encontrada</div>` + manualFooter;
+    return;
+  }
+  dropEl.innerHTML = results.map(({prova, e}) => {
+    const pnm = (prova.prova||prova.evento||'?').replace(/\s*[-–].*/,'').trim();
+    return `<div class="busca-item">
+      <div class="busca-item-ord">${e.ordem}°</div>
+      <div class="busca-item-info">
+        <div class="busca-item-cav">${esc(e.cavalo)}</div>
+        <div class="busca-item-sub">${esc(e.cavaleiro)} · ${esc(pnm)}</div>
+      </div>
+      <button class="busca-item-add" onmousedown="event.preventDefault();addPedidoToClient('${clientId}','${encodeURIComponent(prova.id)}',${e.ordem})">+ Add</button>
+    </div>`;
+  }).join('') + manualFooter;
+}
+
+function mostrarFormManual(clientId, dropId) {
+  const dropEl = document.getElementById(dropId);
+  if (!dropEl) return;
+  dropEl.style.display = 'block';
+  dropEl.innerHTML = `<div class="manual-form">
+    <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:6px">ENTRADA DE PROVA ANTIGA / MANUAL</div>
+    <input class="manual-inp" id="man-prova-${clientId}" placeholder="Nome da prova (ex: 6ª ETAPA COPA SANTO AMARO)" autocomplete="off" style="margin-bottom:6px">
+    <div class="manual-form-row">
+      <input class="manual-inp" id="man-cav-${clientId}" placeholder="Cavalo" autocomplete="off">
+      <input class="manual-inp" id="man-rid-${clientId}" placeholder="Cavaleiro" autocomplete="off">
+    </div>
+    <div class="manual-form-row" style="align-items:center;margin-top:4px">
+      <input class="manual-inp" id="man-qty-${clientId}" type="number" min="1" max="50" value="1"
+        placeholder="Qtd" style="flex:0 0 60px;text-align:center">
+      <span style="font-size:11px;color:var(--gray);flex-shrink:0">vídeo(s)</span>
+      <button class="manual-btn" style="flex:1" onmousedown="event.preventDefault();adicionarEntradaManual('${clientId}','${dropId}')">+ Adicionar</button>
+      <button class="manual-btn" style="background:transparent;border-color:var(--dim);color:var(--gray);flex-shrink:0"
+        onmousedown="event.preventDefault();document.getElementById('${dropId}').style.display='none'">✕</button>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById('man-prova-' + clientId)?.focus(), 50);
+}
+
+function adicionarEntradaManual(clientId, dropId) {
+  const prova     = (document.getElementById('man-prova-' + clientId)?.value || '').trim();
+  const cavalo    = (document.getElementById('man-cav-' + clientId)?.value || '').trim();
+  const cavaleiro = (document.getElementById('man-rid-' + clientId)?.value || '').trim();
+  const qty       = Math.max(1, Math.min(50, parseInt(document.getElementById('man-qty-' + clientId)?.value) || 1));
+
+  if (!cavalo && !cavaleiro) {
+    alert('Informe pelo menos o cavalo ou o cavaleiro.'); return;
+  }
+
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  if (!c.pedidos) c.pedidos = [];
+
+  // Mesmo prova_id para que vídeos da mesma prova agrupem juntos no card
+  const provaId = 'manual_' + uid();
+  for (let i = 0; i < qty; i++) {
+    c.pedidos.push({
+      id: uid(),
+      prova_id:    provaId,
+      prova_nome:  prova || 'Entrada manual',
+      prova_pista: '',
+      ordem:       0,
+      cavaleiro:   cavaleiro || '—',
+      cavalo:      cavalo || '—',
+      status:      'pendente',
+      manual:      true
+    });
+  }
+  saveClients(clients);
+  const dropEl = document.getElementById(dropId);
+  if (dropEl) dropEl.style.display = 'none';
+  renderClientes();
+}
+
+function addPedidoToClient(clientId, encProvaId, ordem) {
+  const provaId = decodeURIComponent(encProvaId);
+  const prova   = load().find(p => p.id === provaId);
+  if (!prova) return;
+  const e = prova.entradas.find(e => e.ordem === ordem);
+  if (!e) return;
+
+  const clients = loadClients();
+  const c = clients.find(c => c.id === clientId);
+  if (!c) return;
+  if (!c.pedidos) c.pedidos = [];
+  if (c.pedidos.some(p => p.prova_id === provaId && p.ordem === ordem)) return;
+
+  c.pedidos.push({
+    id: uid(),
+    prova_id:    provaId,
+    prova_nome:  (prova.prova||prova.evento||'').replace(/\s*[-–].*/,'').trim() || '?',
+    prova_pista: prova.pista || '',
+    ordem: e.ordem, cavaleiro: e.cavaleiro, cavalo: e.cavalo,
+    status: 'pendente'
+  });
+  saveClients(clients);
+  renderClientes();
+}
+
+function renderClientes() {
+  renderFinanceiro();
+  const clients = loadClients();
+  const dados   = load();
+  const listEl  = document.getElementById('cli-list');
+
+  if (!clients.length) {
+    listEl.innerHTML = `<div class="empty">
+      <div class="eico">👥</div>
+      <div class="etit">Nenhum cliente cadastrado</div>
+      <div class="esub">Preencha o formulário acima para cadastrar um cliente</div>
+    </div>`;
+    return;
+  }
+
+  const countPend = c => (c.pedidos||[]).filter(p=>p.status==='pendente').length;
+  const countEnv  = c => (c.pedidos||[]).filter(p=>p.status==='enviado').length;
+
+  const sorted = [...clients].sort((a,b) => {
+    const dp = countPend(a) - countPend(b);
+    if (dp !== 0) return -dp;
+    return countEnv(b) - countEnv(a);
+  });
+
+  listEl.innerHTML = sorted.map(c => {
+    const pedidos = c.pedidos || [];
+    const foneNum = (c.fone||'').replace(/\D/g,'');
+    const waUrl   = foneNum.length >= 8 ? `https://wa.me/55${foneNum}` : '';
+
+    const cavTags = (c.cavalos||[]).map(v=>`<span class="tag tag-cav">🐎 ${esc(v)}</span>`).join('');
+    const ridTags = (c.cavaleiros||[]).map(v=>`<span class="tag tag-rid">👤 ${esc(v)}</span>`).join('');
+
+    // Saldo de vídeos
+    const qtdPac  = parseInt(c.qtd_pacote) || 0;
+    const precVid = parseFloat(c.preco_video) || 0;
+    const nEnv    = pedidos.filter(p=>p.status==='enviado').length;
+    const nPend   = pedidos.filter(p=>p.status==='pendente').length;
+    const restam  = qtdPac - nEnv;
+    const pct     = qtdPac > 0 ? Math.min(100, Math.round(nEnv/qtdPac*100)) : 0;
+    const saldoHtml = `<div class="saldo-row">
+      <div class="saldo-nums">
+        <div class="val-item">
+          <div class="val-lbl">PACOTE</div>
+          <input class="val-inp" type="number" min="0" placeholder="0"
+            value="${qtdPac||''}"
+            onblur="salvarCampo('${c.id}','qtd_pacote',parseInt(this.value)||0);renderClientes()">
+        </div>
+        <div class="val-item">
+          <div class="val-lbl">R$/VÍD</div>
+          <input class="val-inp" type="number" min="0" step="0.01" placeholder="0"
+            value="${precVid||''}"
+            onblur="salvarCampo('${c.id}','preco_video',parseFloat(this.value)||0);renderClientes()">
+        </div>
+        ${qtdPac > 0 ? `
+        <div class="val-item" style="text-align:center;min-width:50px">
+          <div class="val-lbl">ENVIADOS</div>
+          <div style="font-size:18px;font-weight:800;color:var(--green);line-height:1.4">${nEnv}</div>
+        </div>
+        <div class="val-item" style="text-align:center;min-width:50px">
+          <div class="val-lbl">RESTAM</div>
+          <div style="font-size:18px;font-weight:800;line-height:1.4;color:${restam<0?'#E05252':restam===0?'var(--green)':'var(--white)'}">${restam < 0 ? '+'+ Math.abs(restam) : restam}</div>
+        </div>` : ''}
+      </div>
+      ${qtdPac > 0 ? `<div class="saldo-prog" style="margin-top:4px;width:100%"><div class="saldo-fill" style="width:${pct}%"></div></div>` : ''}
+    </div>`;
+
+    // Pedidos agrupados por prova
+    const byProva = {};
+    for (const p of pedidos) {
+      if (!byProva[p.prova_id]) {
+        byProva[p.prova_id] = {nome: resolveProvaNome(p, dados), pista: p.prova_pista, itens:[]};
+      }
+      byProva[p.prova_id].itens.push(p);
+    }
+    const pedidosHtml = Object.values(byProva).map(grp => `
+      <div class="cli-prova-grp">
+        <div class="cli-prova-nm">${esc(grp.nome)}${grp.pista?' · '+esc(grp.pista):''}</div>
+        ${grp.itens.sort((a,b)=>a.ordem-b.ordem).map(p => {
+          const env = p.status === 'enviado';
+          const ordLabel = p.ordem > 0 ? `${p.ordem}°` : (p.manual ? '✏️' : '—');
+          return `<div class="ped-row${env?' enviado':''}">
+            <div class="ped-ord" style="${p.manual?'font-size:14px':''}">${ordLabel}</div>
+            <div class="ped-info">
+              <div class="ped-horse">🐎 ${esc(p.cavalo)}</div>
+              <div class="ped-rider">👤 ${esc(p.cavaleiro)}</div>
+            </div>
+            <div class="ped-actions">
+              <button class="ped-btn ${env?'pb-env':'pb-pend2'}"
+                onclick="setStatusPedido('${c.id}','${p.id}','${env?'pendente':'enviado'}')">
+                ${env?'✅ Enviado':'📤 Enviar'}
+              </button>
+              <button class="ped-btn pb-nao" onclick="deletarPedido('${c.id}','${p.id}')" title="Remover">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`).join('');
+
+    const hdrTxt = pedidos.length
+      ? `📋 ${nPend} pendente(s) · ${nEnv} enviado(s)`
+      : '—  nenhuma entrada adicionada';
+
+    const dropId = 'drop-' + c.id;
+    return `<div class="cli-card" id="card-${c.id}">
+      <div class="cli-top">
+        <div class="cli-row1">
+          <div class="cli-name">👤 ${esc(c.nome)}</div>
+          <div class="cli-right">
+            ${pagBadge(c)}
+            ${waUrl?`<a class="cli-wa" href="${waUrl}" target="_blank">💬 WA</a>`:''}
+            <button class="cli-edit-ico" onclick="toggleEditCliente('${c.id}')" title="Editar dados">✏️</button>
+            <button class="cli-del" onclick="deletarCliente('${c.id}')">✕</button>
+          </div>
+        </div>
+        ${c.fone?`<div class="cli-fone">📱 ${esc(c.fone)}</div>`:''}
+        ${cavTags||ridTags?`<div class="tags">${cavTags}${ridTags}</div>`:''}
+        <textarea class="obs-edit" rows="2" placeholder="📝 Observação..."
+          onblur="salvarCampo('${c.id}','obs',this.value)">${esc(c.obs||'')}</textarea>
+        <div class="cli-vals">
+          <div class="val-item">
+            <div class="val-lbl">COBRADO</div>
+            <input class="val-inp" type="text" placeholder="R$ 0,00"
+              value="${esc(c.val_cobrado||'')}"
+              onblur="salvarCampo('${c.id}','val_cobrado',this.value)">
+          </div>
+          ${c.pagamento==='parcial'?`<div class="val-item">
+            <div class="val-lbl">JÁ PAGO</div>
+            <input class="val-inp" type="text" placeholder="R$ 0,00"
+              value="${esc(c.val_pago||'')}"
+              onblur="salvarCampo('${c.id}','val_pago',this.value)">
+          </div>`:''}
+        </div>
+      </div>
+      <div class="cli-edit-form" id="edit-${c.id}" style="display:none">
+        <div class="edit-grid">
+          <div>
+            <div class="edit-lbl">NOME</div>
+            <input class="edit-inp" id="ename-${c.id}" value="${esc(c.nome)}" placeholder="Nome do cliente">
+          </div>
+          <div>
+            <div class="edit-lbl">FONE / WHATSAPP</div>
+            <input class="edit-inp" id="efone-${c.id}" value="${esc(c.fone||'')}" placeholder="(11) 99999-9999">
+          </div>
+          <div>
+            <div class="edit-lbl">CAVALOS (um por linha)</div>
+            <textarea class="edit-inp" id="ecavs-${c.id}" rows="2" placeholder="Cavalo 1&#10;Cavalo 2">${esc((c.cavalos||[]).join('\n'))}</textarea>
+          </div>
+          <div>
+            <div class="edit-lbl">CAVALEIROS (um por linha)</div>
+            <textarea class="edit-inp" id="erids-${c.id}" rows="2" placeholder="Cavaleiro 1&#10;Cavaleiro 2">${esc((c.cavaleiros||[]).join('\n'))}</textarea>
+          </div>
+        </div>
+        <button class="edit-save-btn" onclick="salvarEdicaoCliente('${c.id}')">💾 Salvar alterações</button>
+      </div>
+      ${saldoHtml}
+      <div class="cli-matches">
+        <div class="cli-matches-hdr ${pedidos.length?'found':''}">${hdrTxt}</div>
+        ${pedidosHtml}
+        <div class="cli-add-entry">
+          <div class="busca-wrap">
+            <input class="cli-add-inp" placeholder="+ Adicionar entrada (cavaleiro ou cavalo)..."
+              oninput="buscarEntradasCard('${c.id}',this.value,'${dropId}')"
+              onfocus="buscarEntradasCard('${c.id}',this.value,'${dropId}')"
+              onblur="setTimeout(()=>{const d=document.getElementById('${dropId}');if(d&&!d.contains(document.activeElement))d.style.display='none'},200)">
+            <div class="busca-drop" id="${dropId}" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EVENTOS ───────────────────────────────────────────────────────────
+function renderEventos() {
+  const dados   = load();
+  const clients = loadClients();
+  const listEl  = document.getElementById('ev-list');
+  const stEl    = document.getElementById('statsbar-wrap');
+  const clrBtn  = document.getElementById('btn-clr');
+
+  if (!dados.length) {
+    stEl.innerHTML=''; clrBtn.style.display='none';
+    listEl.innerHTML=`<div class="empty">
+      <div class="eico">📋</div>
+      <div class="etit">Nenhuma prova importada</div>
+      <div class="esub">Vá para a aba <b>Importar</b> e cole as URLs</div>
+    </div>`; return;
+  }
+
+  const total = dados.reduce((s,p)=>s+p.entradas.length,0);
+  const nCli  = new Set(clients.flatMap(c=>(c.pedidos||[])
+    .filter(p=>p.status!=='descartado').map(p=>p.prova_id))).size;
+  stEl.innerHTML=`<div class="statsbar">
+    <div><div class="sval">${dados.length}</div><div class="slbl">Provas</div></div>
+    <div><div class="sval">${total}</div><div class="slbl">Entradas</div></div>
+    <div><div class="sval">${clients.length}</div><div class="slbl">Clientes</div></div>
+  </div>`;
+  clrBtn.style.display='block';
+
+  // Mapa entrada → clientes com pedidos
+  const eMap = {};
+  for (const c of clients) {
+    for (const p of (c.pedidos||[])) {
+      const k = p.prova_id + '|||' + p.ordem;
+      if (!eMap[k]) eMap[k] = [];
+      eMap[k].push({nome:c.nome, status:p.status, clientId:c.id, pedidoId:p.id});
+    }
+  }
+
+  const sorted = [...dados].sort((a,b)=>new Date(b.importadoEm)-new Date(a.importadoEm));
+
+  // Agrupar provas pelo nome do evento
+  const byEvento = {};
+  for (const p of sorted) {
+    const evNm = p.evento || 'Sem evento';
+    if (!byEvento[evNm]) byEvento[evNm] = [];
+    byEvento[evNm].push(p);
+  }
+
+  let piGlobal = 0;
+  listEl.innerHTML = Object.entries(byEvento).map(([evNm, provaList]) => {
+    const totalEnt = provaList.reduce((s,p)=>s+p.entradas.length,0);
+    const cliDoEvento = new Set(
+      provaList.flatMap(p=>p.entradas.flatMap(e=>(eMap[p.id+'|||'+e.ordem]||[]).map(x=>x.clientId)))
+    ).size;
+
+    const provasHtml = provaList.map(p => {
+      const pi = piGlobal++;
+      const idUrl = p.url && p.url.match(/[?&]ID=(\d+)/i);
+      const ps  = (p.prova || (idUrl ? `Prova #${idUrl[1]}` : 'Prova desconhecida'))
+        .replace(/\s*[-–]\s*(NORMAL|ESPECIAL|HC\/|CTR\b|COM TEMPO).*/i,'').trim();
+      const sub = [p.pista, `${p.entradas.length} entradas`, p.datas].filter(Boolean).join(' · ');
+      const nCliProva = new Set(
+        p.entradas.flatMap(e=>(eMap[p.id+'|||'+e.ordem]||[]).map(x=>x.clientId))
+      ).size;
+
+      const entriesHtml = p.entradas.slice().sort((a,b)=>a.ordem-b.ordem).map(e => {
+        const clis = eMap[p.id+'|||'+e.ordem] || [];
+        const cliHtml = clis.length
+          ? clis.map(cl => {
+              const env  = cl.status === 'enviado';
+              const cls  = env ? 'ev-cli-ok' : 'ev-cli-pend';
+              const ico  = env ? '✅' : '⏳';
+              const next = env ? 'pendente' : 'enviado';
+              return `<button class="ev-cli-btn ${cls}"
+                onclick="setStatusPedido('${cl.clientId}','${cl.pedidoId}','${next}')">
+                ${ico} ${esc(cl.nome)}</button>`;
+            }).join(' ')
+          : `<span class="ev-no-cli">—</span>`;
+        return `<div class="ev-entry${clis.length ? ' tem-cli' : ''}">
+          <div class="ev-ord">${e.ordem}°</div>
+          <div class="ev-einfo">
+            <div class="ev-horse">${esc(e.cavalo)}</div>
+            <div class="ev-rider">${esc(e.cavaleiro)}</div>
+          </div>
+          ${cliHtml}
+        </div>`;
+      }).join('');
+
+      const divId = 'evt-' + pi;
+      return `<div class="ev-prova-card">
+        <div class="ev-prova-hdr" onclick="toggleEvEntradas('${divId}')">
+          <div class="ev-prova-left">
+            <div class="ev-prova-nm">${esc(ps)}</div>
+            <div class="ev-prova-sub">${esc(sub)}${nCliProva?` · <b style="color:var(--green)">${nCliProva} cliente(s)</b>`:''}</div>
+          </div>
+          <div class="ev-prova-right">
+            <button class="btn-del" style="background:rgba(100,160,255,.1);border-color:rgba(100,160,255,.3);color:var(--blue);margin-right:4px" onclick="event.stopPropagation();editarNomeProva('${encodeURIComponent(p.id)}','${ps.replace(/'/g,"\\'")}')">✏️</button>
+            <button class="btn-del" onclick="event.stopPropagation();deletarEvento('${encodeURIComponent(p.id)}')">✕</button>
+            <span id="arr-${divId}" style="color:var(--gray);font-size:12px">▼</span>
+          </div>
+        </div>
+        <div class="ev-entries" id="${divId}">${entriesHtml}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="ev-evt-grp">
+      <div class="ev-evt-hdr">
+        <div class="ev-evt-nm">🏆 ${esc(evNm)}</div>
+        <div class="ev-evt-sub">${provaList.length} prova(s) · ${totalEnt} entradas${cliDoEvento?` · <b style="color:var(--green)">${cliDoEvento} cliente(s)</b>`:''}</div>
+      </div>
+      ${provasHtml}
+    </div>`;
+  }).join('');
+}
+
+function toggleEvEntradas(divId) {
+  const el  = document.getElementById(divId);
+  const arr = document.getElementById('arr-' + divId);
+  if (!el) return;
+  const open = el.classList.toggle('open');
+  if (arr) arr.textContent = open ? '▲' : '▼';
+}
+
+function editarNomeProva(enc, nomeAtual) {
+  const novo = prompt('Nome da prova:', nomeAtual);
+  if (novo === null || !novo.trim()) return;
+  const dados = load();
+  const d = dados.find(d => d.id === decodeURIComponent(enc));
+  if (!d) return;
+  d.prova = novo.trim();
+  save(dados);
+  renderEventos();
+}
+
+function deletarEvento(enc) {
+  if (!confirm('Remover esta prova?')) return;
+  save(load().filter(d=>d.id!==decodeURIComponent(enc)));
+  renderEventos();
+}
+
+function limpar() {
+  if (!confirm('Apagar TODOS os dados de provas?')) return;
+  save([]); renderEventos();
+}
+
+// ── ENTREGAS ──────────────────────────────────────────────────────────
+function renderEntregas() {
+  const clients = loadClients();
+  const dados   = load();
+  const sumEl   = document.getElementById('ent-summary');
+  const listEl  = document.getElementById('ent-list');
+
+  // Totais
+  let totalPend = 0, totalEnv = 0;
+  for (const c of clients) {
+    for (const p of (c.pedidos||[])) {
+      if (p.status==='pendente') totalPend++;
+      if (p.status==='enviado')  totalEnv++;
+    }
+  }
+
+  sumEl.innerHTML = (totalPend+totalEnv) ? `<div class="ent-summary">
+    <div class="ent-sum-item">
+      <div class="ent-sum-lbl">A ENVIAR</div>
+      <div class="ent-sum-val" style="color:var(--gold)">${totalPend}</div>
+    </div>
+    <div class="ent-sum-item">
+      <div class="ent-sum-lbl">ENVIADOS</div>
+      <div class="ent-sum-val" style="color:var(--green)">${totalEnv}</div>
+    </div>
+    <div class="ent-sum-item">
+      <div class="ent-sum-lbl">TOTAL</div>
+      <div class="ent-sum-val">${totalPend+totalEnv}</div>
+    </div>
+  </div>` : '';
+
+  const comPedidos = clients.filter(c=>(c.pedidos||[]).some(p=>p.status==='pendente'||p.status==='enviado'));
+
+  if (!comPedidos.length) {
+    listEl.innerHTML = `<div class="empty">
+      <div class="eico">📤</div>
+      <div class="etit">Nenhuma entrega ainda</div>
+      <div class="esub">Adicione entradas na aba <b>Clientes</b></div>
+    </div>`; return;
+  }
+
+  const comPend = comPedidos.filter(c=>(c.pedidos||[]).some(p=>p.status==='pendente'));
+  const soEnv   = comPedidos.filter(c=>!(c.pedidos||[]).some(p=>p.status==='pendente'));
+
+  function renderCliEnt(c, statusFiltro) {
+    const pedidos = (c.pedidos||[]).filter(p=>statusFiltro.includes(p.status)).sort((a,b)=>a.ordem-b.ordem);
+    if (!pedidos.length) return '';
+    const foneNum = (c.fone||'').replace(/\D/g,'');
+    const waUrl   = foneNum.length>=8 ? `https://wa.me/55${foneNum}` : '';
+    const nPend   = pedidos.filter(p=>p.status==='pendente').length;
+    return `<div class="ent-card">
+      <div class="ent-card-hdr">
+        <div class="ent-cli-nm">👤 ${esc(c.nome)}</div>
+        <div class="ent-cli-actions">
+          ${nPend ? `<button class="btn-marcar-all" onclick="marcarTodosEnviados('${c.id}')">✅ Marcar todos</button>` : ''}
+          ${waUrl ? `<a class="cli-wa" href="${waUrl}" target="_blank">💬 WA</a>` : ''}
+        </div>
+      </div>
+      ${pedidos.map(p => {
+        const env  = p.status==='enviado';
+        const next = env ? 'pendente' : 'enviado';
+        return `<div class="ent-row">
+          <div class="ent-ord">${p.ordem}°</div>
+          <div class="ent-info">
+            <div class="ent-horse">🐎 ${esc(p.cavalo)}</div>
+            <div class="ent-rider">👤 ${esc(p.cavaleiro)}</div>
+            <div class="ent-prova">${esc(resolveProvaNome(p, dados))}${p.prova_pista?' · '+esc(p.prova_pista):''}</div>
+          </div>
+          <button class="ent-btn ${env?'ent-btn-ok':'ent-btn-pend'}"
+            onclick="setStatusPedido('${c.id}','${p.id}','${next}')">
+            ${env?'✅ Enviado':'📤 Enviar'}
+          </button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  let html = '';
+  if (comPend.length) {
+    html += `<div class="ent-section-hdr">A ENVIAR</div>`;
+    html += comPend.map(c=>renderCliEnt(c,['pendente','enviado'])).join('');
+  }
+  if (soEnv.length) {
+    html += `<div class="ent-section-hdr" style="margin-top:12px">ENVIADOS</div>`;
+    html += soEnv.map(c=>renderCliEnt(c,['enviado'])).join('');
+  }
+  listEl.innerHTML = html;
+}
+
+// ── CLOUD SYNC ────────────────────────────────────────────────────────
+// Ouve mudanças do Firestore e atualiza todos os dispositivos em tempo real
+if (window.db) {
+  function _tabAtiva() {
+    return ['b','i','c','e','d'].find(t =>
+      document.getElementById('tab-'+t)?.classList.contains('on')) || 'b';
+  }
+  // Provas: re-renderiza aba Eventos se estiver aberta
+  db.collection('ordens_config').doc('provas').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const j = JSON.stringify(snap.data().items || []);
+    if (j !== localStorage.getItem(KEY)) {
+      localStorage.setItem(KEY, j);
+      if (_tabAtiva() === 'e') renderEventos();
+    }
+  }, e => console.warn('Sync provas:', e));
+  // Clientes: re-renderiza aba Clientes se estiver aberta
+  db.collection('ordens_config').doc('clientes').onSnapshot(snap => {
+    if (!snap.exists) return;
+    const j = JSON.stringify(snap.data().items || []);
+    if (j !== localStorage.getItem(CLI_KEY)) {
+      localStorage.setItem(CLI_KEY, j);
+      migrarClientes(); // garante migração após sync da nuvem
+      const ta = _tabAtiva();
+      if (ta === 'c') renderClientes();
+      else if (ta === 'd') renderEntregas();
+      else if (ta === 'e') renderEventos();
+    }
+  }, e => console.warn('Sync clientes:', e));
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator && IS_LOCAL)
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+(function init() {
+  migrarClientes(); // migra dados antigos (entregues[]) para o novo modelo (pedidos[])
+  if (!load().length) {
+    document.getElementById('results').innerHTML=`<div class="empty">
+      <div class="eico">📥</div>
+      <div class="etit">Dados não importados</div>
+      <div class="esub">Vá para <b>Importar</b> e cole as URLs das ordens de entrada</div>
+    </div>`;
+  }
+})();
+</script>
+</body>
+</html>
