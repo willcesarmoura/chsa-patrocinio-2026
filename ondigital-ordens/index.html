@@ -1478,7 +1478,13 @@ function renderFinanceiroTab() {
     const qtdPac  = parseInt(c.qtd_pacote) || 0;
     const foneNum = (c.fone || '').replace(/\D/g, '');
     const waUrl   = foneNum.length >= 8 ? `https://wa.me/55${foneNum}` : '';
-    return { cobrado, pago, deve, nEnv, nPend, qtdPac, waUrl };
+    // Classificação de risco automática
+    let risco = 'ok';
+    if (deve > 0 && nEnv > 0)                             risco = 'alto';   // entregou, não pagou
+    else if (deve > 0 && c.pagamento === 'parcial')        risco = 'medio';  // parcialmente pago
+    else if (deve > 0 && c.pagamento !== 'pago')           risco = 'baixo';  // cobrado mas não entregou
+    else if (cobrado === 0 && (nEnv + nPend) === 0)        risco = 'novo';   // cliente sem valor/pedido
+    return { cobrado, pago, deve, nEnv, nPend, qtdPac, waUrl, risco };
   }
 
   // ── agrupar clientes por evento ──
@@ -1503,12 +1509,18 @@ function renderFinanceiroTab() {
   }
 
   // ── totais globais ──
-  let gtFat = 0, gtRec = 0, gtEnv = 0, gtPend = 0;
+  let gtFat = 0, gtRec = 0, gtEnv = 0, gtPend = 0, gtRisco = 0;
   for (const c of clients) {
     const s = stats(c);
     gtFat  += s.cobrado; gtRec  += s.pago;
     gtEnv  += s.nEnv;    gtPend += s.nPend;
+    if (s.risco === 'alto') gtRisco++;
   }
+  const gtInad = clients.length > 0
+    ? clients.filter(c => (c.pagamento || 'pendente') !== 'pago' && parseMoeda(c.val_cobrado) > 0).length
+    : 0;
+  const gtTicket = clients.length > 0 && gtFat > 0 ? gtFat / clients.filter(c => parseMoeda(c.val_cobrado) > 0).length : 0;
+  const gtColPct = gtFat > 0 ? Math.round(gtRec / gtFat * 100) : 0;
 
   // ── card de cliente ──
   function cliCard(c) {
@@ -1525,6 +1537,31 @@ function renderFinanceiroTab() {
       ? `<div class="fin-v-num red">${fmtMoeda(s.deve)}</div>`
       : `<div class="fin-v-num green">Quitado ✓</div>`;
 
+    // Badge de risco automático
+    const riscoMap = {
+      alto:  { lbl:'⚠️ RISCO',     col:'#E05252',              bg:'rgba(220,80,80,.12)'    },
+      medio: { lbl:'📋 ATENÇÃO',   col:'#E8A840',              bg:'rgba(232,168,64,.12)'   },
+      baixo: { lbl:'🕐 PENDENTE',  col:'rgba(255,255,255,.4)', bg:'rgba(255,255,255,.04)'  },
+      novo:  { lbl:'🆕 NOVO',      col:'rgba(255,255,255,.3)', bg:'rgba(255,255,255,.03)'  },
+      ok:    { lbl:'✅ QUITADO',   col:'var(--green)',          bg:'rgba(76,175,114,.1)'    },
+    };
+    const rk = riscoMap[s.risco] || riscoMap.ok;
+    const riscoBadge = `<span style="font-size:9px;font-weight:800;letter-spacing:.8px;padding:2px 7px;
+      border-radius:4px;background:${rk.bg};color:${rk.col}">${rk.lbl}</span>`;
+
+    // Botão de cobrança WA com mensagem pré-preenchida
+    let waCobrar = '';
+    if (s.waUrl && s.deve > 0) {
+      const msg = encodeURIComponent(
+        `Olá ${c.nome}! 😊 Passando para lembrar sobre os vídeos do campeonato.\n` +
+        (s.nEnv > 0 ? `✅ ${s.nEnv} vídeo(s) já entregue(s).\n` : '') +
+        `💰 Valor em aberto: ${fmtMoeda(s.deve)}.\nObrigado! 🐎`
+      );
+      waCobrar = `<a href="${s.waUrl}?text=${msg}" target="_blank"
+        style="font-size:10px;padding:3px 9px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);
+               color:#25D366;border-radius:5px;text-decoration:none;white-space:nowrap;flex-shrink:0">
+        💬 Cobrar</a>`;
+    }
 
     const total = s.nEnv + s.nPend;
     const vidTxt = total > 0
@@ -1541,9 +1578,17 @@ function renderFinanceiroTab() {
 
     return `<div class="fin-cli-card">
       <div class="fin-cc-top">
-        <div class="fin-cc-nm">👤 ${esc(c.nome)}</div>
-        ${s.waUrl ? `<a href="${s.waUrl}" target="_blank" class="fin-wa-ico">💬</a>` : ''}
-        <button class="pag-btn ${cls}" onclick="togglePagamento('${c.id}');setTimeout(renderFinanceiroTab,80)">${txt}</button>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px">
+            <div class="fin-cc-nm">👤 ${esc(c.nome)}</div>
+            ${riscoBadge}
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+          ${waCobrar}
+          ${s.waUrl ? `<a href="${s.waUrl}" target="_blank" class="fin-wa-ico">💬</a>` : ''}
+          <button class="pag-btn ${cls}" onclick="togglePagamento('${c.id}');setTimeout(renderFinanceiroTab,80)">${txt}</button>
+        </div>
       </div>
       <div class="fin-cc-vals">
         <div class="fin-v">
@@ -1576,12 +1621,14 @@ function renderFinanceiroTab() {
       return sb.nPend - sa.nPend;
     });
 
-    let evFat = 0, evRec = 0, evPend = 0;
+    let evFat = 0, evRec = 0, evPend = 0, evRisco = 0;
     for (const c of clis) {
       const s = stats(c); evFat += s.cobrado; evRec += s.pago; evPend += s.nPend;
+      if (s.risco === 'alto') evRisco++;
     }
-    const evDeve = Math.max(0, evFat - evRec);
-    const label  = evNm === '__sem__' ? '📋 Sem evento vinculado' : `🏆 ${esc(evNm)}`;
+    const evDeve    = Math.max(0, evFat - evRec);
+    const evColPct  = evFat > 0 ? Math.round(evRec / evFat * 100) : 0;
+    const label     = evNm === '__sem__' ? '📋 Sem evento vinculado' : `🏆 ${esc(evNm)}`;
 
     return `<div class="fin-evt-grp">
       <div class="fin-evt-hdr">
@@ -1592,8 +1639,14 @@ function renderFinanceiroTab() {
           ${evDeve > 0
             ? `<span class="fin-pill fin-pill-red">Deve ${fmtMoeda(evDeve)}</span>`
             : `<span class="fin-pill fin-pill-green">✓ Quitado</span>`}
+          ${evColPct < 100 && evFat > 0
+            ? `<span class="fin-pill fin-pill-gray">${evColPct}% recebido</span>`
+            : ''}
           ${evPend > 0
             ? `<span class="fin-pill fin-pill-blue">${evPend} vídeo(s) a enviar</span>`
+            : ''}
+          ${evRisco > 0
+            ? `<span class="fin-pill fin-pill-red">⚠️ ${evRisco} risco</span>`
             : ''}
         </div>
       </div>
@@ -1607,6 +1660,8 @@ function renderFinanceiroTab() {
     if (b === '__sem__') return -1;
     return a.localeCompare(b, 'pt-BR');
   });
+
+  const colPctStyle = `width:${gtColPct}%;height:100%;border-radius:3px;background:${gtColPct===100?'var(--green)':gtColPct>50?'var(--gold)':'#E05252'};transition:width .6s`;
 
   el.innerHTML = `
     <div class="fin-global-bar">
@@ -1623,11 +1678,29 @@ function renderFinanceiroTab() {
         <div class="fin-gb-val ${(gtFat-gtRec)>0?'red':'green'}">${fmtMoeda(Math.max(0,gtFat-gtRec))}</div>
       </div>
       <div class="fin-gb-item">
+        <div class="fin-gb-lbl">INADIMPLÊNCIA</div>
+        <div class="fin-gb-val ${gtInad>0?'red':'green'}" style="font-size:15px">${gtInad}/${clients.length}</div>
+      </div>
+      <div class="fin-gb-item">
+        <div class="fin-gb-lbl">TICKET MÉDIO</div>
+        <div class="fin-gb-val" style="font-size:14px;color:var(--gray)">${gtTicket>0?fmtMoeda(gtTicket):'—'}</div>
+      </div>
+      <div class="fin-gb-item">
         <div class="fin-gb-lbl">VÍDEOS</div>
-        <div class="fin-gb-val" style="font-size:12px;line-height:1.4">
-          <span style="color:var(--green)">${gtEnv}✓</span>&nbsp;<span style="color:#E05252">${gtPend}⏳</span>
+        <div class="fin-gb-val" style="font-size:12px;line-height:1.5">
+          <span style="color:var(--green)">${gtEnv}✓</span> <span style="color:#E05252">${gtPend}⏳</span>
         </div>
       </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gray)">TAXA DE RECEBIMENTO</span>
+        <span style="font-size:12px;font-weight:800;color:${gtColPct===100?'var(--green)':gtColPct>50?'var(--gold)':'#E05252'}">${gtColPct}%</span>
+      </div>
+      <div style="height:6px;background:var(--dim);border-radius:3px;overflow:hidden">
+        <div style="${colPctStyle}"></div>
+      </div>
+      ${gtRisco > 0 ? `<div style="margin-top:6px;font-size:11px;color:#E05252">⚠️ ${gtRisco} cliente(s) com risco alto — recebeu vídeos mas não pagou</div>` : ''}
     </div>
     ${evKeys.map(k => evSection(k, byEvento[k])).join('')}`;
 }
@@ -1893,9 +1966,9 @@ function adicionarEntradaManual(clientId, dropId) {
     });
   }
   saveClients(clients);
-  const dropEl = document.getElementById(dropId);
-  if (dropEl) dropEl.style.display = 'none';
   renderClientes();
+  // Reabre o formulário manual para o usuário continuar adicionando
+  setTimeout(() => mostrarFormManual(clientId, 'drop-' + clientId), 40);
 }
 
 function addPedidoToClient(clientId, encProvaId, ordem) {
@@ -1920,7 +1993,20 @@ function addPedidoToClient(clientId, encProvaId, ordem) {
     status: 'pendente'
   });
   saveClients(clients);
+  // Salva o valor digitado antes do re-render
+  const savedQuery = document.querySelector('#card-' + clientId + ' .cli-add-inp')?.value || '';
   renderClientes();
+  // Restaura o campo de busca após re-render para continuar adicionando
+  if (savedQuery.length >= 2) {
+    setTimeout(() => {
+      const inp = document.querySelector('#card-' + clientId + ' .cli-add-inp');
+      if (inp) {
+        inp.value = savedQuery;
+        buscarEntradasCard(clientId, savedQuery, 'drop-' + clientId);
+        inp.focus();
+      }
+    }, 40);
+  }
 }
 
 function renderClientes() {
