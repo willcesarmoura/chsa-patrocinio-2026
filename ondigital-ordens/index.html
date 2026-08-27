@@ -1912,12 +1912,21 @@ function buscarEntradasCard(clientId, query, dropId) {
   }).join('') + manualFooter;
 }
 
+function fecharDropCard(dropId) {
+  const d = document.getElementById(dropId);
+  if (d) d.style.display = 'none';
+  if (window._pendingRenderClientes) {
+    window._pendingRenderClientes = false;
+    renderClientes();
+  }
+}
+
 function mostrarFormManual(clientId, dropId) {
   const dropEl = document.getElementById(dropId);
   if (!dropEl) return;
   dropEl.style.display = 'block';
   dropEl.innerHTML = `<div class="manual-form">
-    <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:6px">ENTRADA DE PROVA ANTIGA / MANUAL</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:6px">ENTRADA MANUAL / PROVA ANTIGA</div>
     <input class="manual-inp" id="man-prova-${clientId}" placeholder="Nome da prova (ex: 6ª ETAPA COPA SANTO AMARO)" autocomplete="off" style="margin-bottom:6px">
     <div class="manual-form-row">
       <input class="manual-inp" id="man-cav-${clientId}" placeholder="Cavalo" autocomplete="off">
@@ -1929,17 +1938,21 @@ function mostrarFormManual(clientId, dropId) {
       <span style="font-size:11px;color:var(--gray);flex-shrink:0">vídeo(s)</span>
       <button class="manual-btn" style="flex:1" onmousedown="event.preventDefault();adicionarEntradaManual('${clientId}','${dropId}')">+ Adicionar</button>
       <button class="manual-btn" style="background:transparent;border-color:var(--dim);color:var(--gray);flex-shrink:0"
-        onmousedown="event.preventDefault();document.getElementById('${dropId}').style.display='none'">✕</button>
+        onmousedown="event.preventDefault();fecharDropCard('${dropId}')">✕</button>
     </div>
   </div>`;
   setTimeout(() => document.getElementById('man-prova-' + clientId)?.focus(), 50);
 }
 
 function adicionarEntradaManual(clientId, dropId) {
-  const prova     = (document.getElementById('man-prova-' + clientId)?.value || '').trim();
-  const cavalo    = (document.getElementById('man-cav-' + clientId)?.value || '').trim();
-  const cavaleiro = (document.getElementById('man-rid-' + clientId)?.value || '').trim();
-  const qty       = Math.max(1, Math.min(50, parseInt(document.getElementById('man-qty-' + clientId)?.value) || 1));
+  const provaEl   = document.getElementById('man-prova-' + clientId);
+  const cavEl     = document.getElementById('man-cav-' + clientId);
+  const ridEl     = document.getElementById('man-rid-' + clientId);
+  const qtyEl     = document.getElementById('man-qty-' + clientId);
+  const prova     = (provaEl?.value || '').trim();
+  const cavalo    = (cavEl?.value || '').trim();
+  const cavaleiro = (ridEl?.value || '').trim();
+  const qty       = Math.max(1, Math.min(50, parseInt(qtyEl?.value) || 1));
 
   if (!cavalo && !cavaleiro) {
     alert('Informe pelo menos o cavalo ou o cavaleiro.'); return;
@@ -1950,7 +1963,6 @@ function adicionarEntradaManual(clientId, dropId) {
   if (!c) return;
   if (!c.pedidos) c.pedidos = [];
 
-  // Mesmo prova_id para que vídeos da mesma prova agrupem juntos no card
   const provaId = 'manual_' + uid();
   for (let i = 0; i < qty; i++) {
     c.pedidos.push({
@@ -1966,9 +1978,24 @@ function adicionarEntradaManual(clientId, dropId) {
     });
   }
   saveClients(clients);
-  renderClientes();
-  // Reabre o formulário manual para o usuário continuar adicionando
-  setTimeout(() => mostrarFormManual(clientId, 'drop-' + clientId), 40);
+
+  // Feedback visual sem destruir o DOM (não chama renderClientes aqui)
+  if (cavEl)  cavEl.value  = '';
+  if (ridEl)  ridEl.value  = '';
+  if (qtyEl)  qtyEl.value  = '1';
+
+  // Mostrar confirmação temporária no botão
+  const addBtn = document.querySelector('#' + dropId + ' .manual-btn');
+  if (addBtn) {
+    const orig = addBtn.innerHTML;
+    addBtn.innerHTML = `✅ ${qty} adicionado(s)!`;
+    addBtn.style.background = 'rgba(76,175,114,.25)';
+    setTimeout(() => { addBtn.innerHTML = orig; addBtn.style.background = ''; }, 1500);
+  }
+  if (cavEl) cavEl.focus();
+
+  // Atualizar o card após fechar o formulário (deferred)
+  window._pendingRenderClientes = true;
 }
 
 function addPedidoToClient(clientId, encProvaId, ordem) {
@@ -2171,7 +2198,7 @@ function renderClientes() {
             <input class="cli-add-inp" placeholder="+ Adicionar entrada (cavaleiro ou cavalo)..."
               oninput="buscarEntradasCard('${c.id}',this.value,'${dropId}')"
               onfocus="buscarEntradasCard('${c.id}',this.value,'${dropId}')"
-              onblur="setTimeout(()=>{const d=document.getElementById('${dropId}');if(d&&!d.contains(document.activeElement))d.style.display='none'},200)">
+              onblur="setTimeout(()=>{const d=document.getElementById('${dropId}');if(d&&!d.contains(document.activeElement))fecharDropCard('${dropId}')},200)">
             <div class="busca-drop" id="${dropId}" style="display:none"></div>
           </div>
         </div>
